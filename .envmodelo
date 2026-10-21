@@ -1,0 +1,25 @@
+# ==============================================================================
+# MODELO DE VARIABLES DE ENTORNO (.envmodelo)
+# Copia este archivo a `.env` y completa con tu clave real.
+# ==============================================================================
+
+# --- Proveedor Principal (Google Gemini) ---
+GOOGLE_API_KEY=tu_google_api_key_aqui
+
+# Modelos recomendados para el desafío (rápidos, precisos y económicos)
+MODELO_LLM=gemini-1.5-flash
+MODELO_EMBEDDINGS=models/text-embedding-004
+
+# --- Proveedor Alternativo (OpenAI) ---
+# OPENAI_API_KEY=tu_openai_api_key_aqui
+# MODELO_LLM=gpt-4o-mini
+# MODELO_EMBEDDINGS=text-embedding-3-small
+
+# --- RAG y Recuperación (opcionales) ---
+# ESTRATEGIA_CHUNKING=articulos   # opciones: "articulos" o "recursivo"
+# RETRIEVER=hibrido              # opciones: "hibrido" (BM25 + denso) o "denso"
+
+# --- Monitoreo / LangSmith (Opcional) ---
+# LANGCHAIN_TRACING_V2=false
+# LANGCHAIN_API_KEY=tu_langchain_api_key_aqui
+# LANGCHAIN_PROJECT=Mesa-de-Pedidos

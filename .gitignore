@@ -1,0 +1,36 @@
+# Entorno y Secretos (CRITICO: no commitear credenciales)
+.env
+.env.*
+!.envmodelo
+!.env.example
+.streamlit/secrets.toml
+
+# Entornos virtuales de Python
+.venv/
+venv/
+ENV/
+env/
+
+# Caché y compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Pruebas y cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Artefactos generados por el sistema (FAISS, Checkpoints SQLite, Trazas)
+# Pesan y se regeneran en cada entorno.
+artefactos/*
+!artefactos/salidas/
+artefactos/salidas/*
+!artefactos/salidas/evaluacion*.json
+
+# Archivos de sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
