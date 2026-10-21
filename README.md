@@ -77,7 +77,56 @@ graph TD
 
 ---
 
-## ⚙️ 3. Puesta en Marcha
+## 📂 3. Estructura del Repositorio
+
+```text
+Mesa de Pedidos/
+├── README.md                 este archivo
+├── config.py                 rutas, modelos, parámetros del RAG y reglas de negocio
+├── correr.py                 la consola CLI: procesa mensajes, frena y retoma
+├── evaluar.py                evaluación automatizada contra el golden set
+├── requirements.txt · .envmodelo · .gitignore
+│
+├── datos/                    los datos del enunciado, tal como vinieron
+│   ├── politicas/*.pdf       el corpus del RAG (4 PDF, 10 páginas)
+│   ├── catalogo.csv          40 productos
+│   ├── clientes.csv          12 clientes
+│   ├── bandeja.jsonl         los 20 mensajes de entrada
+│   └── golden_set.json       la respuesta correcta de cada uno
+│
+├── mesa_pedidos/             el paquete
+│   ├── esquemas.py           modelos de Pydantic (structured output y datos)
+│   ├── datos.py              la única capa que abre archivos de datos
+│   ├── reglas.py             la política comercial en funciones puras
+│   ├── tools.py              las tools comerciales (@tool + args_schema)
+│   ├── indexar.py            PDF → chunks por artículo → FAISS persistido
+│   ├── recuperacion.py       retriever híbrido y armado de citas
+│   ├── prompts.py            los prompts del sistema
+│   ├── llm.py                fábrica del cliente de Google Gemini
+│   ├── estado.py             el TypedDict con sus reducers
+│   ├── nodos.py              los 9 nodos del grafo
+│   ├── grafo.py              routers, cableado y checkpointer
+│   ├── ejecucion.py          correr, frenar, retomar, listar pendientes
+│   ├── utilidades.py         validación de CUIT, formato de moneda y texto
+│   └── ver_modelos.py        diagnóstico de modelos y cuotas
+│
+├── tests/                    suite de pruebas con pytest (sin API)
+│   ├── test_tools.py         catálogo, desempate y ambigüedad
+│   ├── test_reglas.py        descuentos, mora, fletes y ruteo
+│   ├── test_estado.py        EstadoMesa, reducers y compilación
+│   ├── test_grafo.py         topología de 9 nodos y 3 routers
+│   └── test_ejecucion.py     frenado, SQLite y reanudación
+│
+└── docs/                     documentación y entrega
+    ├── CONSIGNA.md           enunciado original
+    ├── GUIA_CURADA.md        manual de estudio y bitácora técnica
+    ├── INFORME_FINAL.*       informe de entrega académica (md, pdf, docx)
+    └── grafo.md              diagrama y topología del grafo
+```
+
+---
+
+## ⚙️ 4. Puesta en Marcha
 
 ### Prerrequisitos
 - Python 3.10+ en Windows.
@@ -128,7 +177,7 @@ Google actualiza frecuentemente las cuotas diarias y los nombres de los modelos 
 
 ---
 
-## 🎛️ 4. Configuración del Proyecto (`config.py`)
+## 🎛️ 5. Configuración del Proyecto (`config.py`)
 
 Todo lo relativo a modelos, rutas y reglas de negocio vive centralizado en `config.py`:
 
@@ -144,54 +193,6 @@ Todo lo relativo a modelos, rutas y reglas de negocio vive centralizado en `conf
   - Escala de descuentos por volumen y tope estricto del 15% en herramientas eléctricas (Dewalt, Makita, Bosch).
   - Bonificación financiera por pago anticipado: 3% (opera fuera del tope).
   - Días de mora: 30 a 60 días requiere autorización gerencial; >60 días cuenta suspendida (solo habilitado con pago anticipado).
-
----
-
-## 📂 5. Estructura del Repositorio
-
-```text
-Mesa de Pedidos/
-├── datos/                          # Datos duros y corpus de negocio
-│   ├── politicas/                  # 4 PDFs corporativos (corpus del RAG: 10 páginas)
-│   ├── catalogo.csv                # 40 productos industriales con precio, IVA, stock y depósito
-│   ├── clientes.csv                # 12 clientes con CUIT, límite, saldo y mora
-│   ├── bandeja.jsonl               # 20 mensajes de entrada reales (simulación de bandeja)
-│   └── golden_set.json             # 20 casos de referencia para evaluación final
-├── mesa_pedidos/                   # Paquete Python del sistema
-│   ├── __init__.py
-│   ├── esquemas.py                 # Modelos Pydantic para Structured Output y datos duros
-│   ├── estado.py                   # TypedDict (EstadoMesa) con reducer Annotated[list[str], add]
-│   ├── tools.py                    # Tools comerciales (@tool con args_schema y tolerancia tipográfica)
-│   ├── reglas.py                   # Política comercial en Python puro (cero matemática en LLM)
-│   ├── indexar.py                  # Ingesta, chunking semántico por artículo e índice FAISS
-│   ├── recuperacion.py             # Retriever híbrido (BM25 + FAISS) y armado fidedigno de citas
-│   ├── llm.py                      # Fábrica del cliente Google Gemini con Structured Output
-│   ├── prompts.py                  # Prompts protegidos contra inyecciones y sin operaciones matemáticas
-│   ├── nodos.py                    # Implementación de los 9 nodos del grafo
-│   ├── grafo.py                    # Ensamblado del StateGraph, 3 routers condicionales y SqliteSaver
-│   └── ver_modelos.py              # Script de diagnóstico para consultar cuotas y modelos de Gemini
-├── tests/                          # Suite de pruebas unitarias determinísticas (sin consumo de API)
-│   ├── test_tools.py               # Pruebas de consultar_producto y verificar_credito
-│   ├── test_reglas.py              # Pruebas de descuentos, topes, mora, fletes y decidir_ruta
-│   ├── test_estado.py              # Validación de EstadoMesa, reducers de logs y serialización
-│   └── test_grafo.py               # Verificación de compilación, topología y routers pasamanos
-├── docs/                           # Documentación técnica y manual de estudio
-│   ├── CONSIGNA.md                 # Enunciado y requerimientos formales de la diplomatura
-│   └── GUIA_CURADA.md              # Bitácora técnica y guía pedagógica de IA Engineering
-├── artefactos/                     # Salidas generadas por el sistema (ignorado en git)
-│   ├── indice_faiss/               # Vectorstore FAISS persistido con su manifiesto
-│   ├── checkpoints.sqlite          # Base transaccional para pausar y reanudar pedidos (HITL)
-│   └── salidas/                    # Registro de pedidos confirmados, rechazados y tickets
-├── config.py                       # Configuración centralizada única (rutas, modelos, parámetros)
-├── correr.py                       # Consola CLI para procesar mensajes y gestionar aprobaciones
-├── evaluar.py                      # Evaluación automatizada contra el Golden Set (Fase 6)
-├── requirements.txt                # Dependencias fijadas del proyecto
-├── .envmodelo                      # Plantilla segura de variables de entorno
-├── .gitignore                      # Protección estricta de secretos, bases y cachés
-├── AGENTS.md                       # Reglas permanentes para el asistente IA
-├── PLAN_DE_TRABAJO.md              # Plan de trabajo estructurado por fases
-└── README.md                       # Documentación principal del proyecto
-```
 
 ---
 
@@ -249,4 +250,4 @@ El reporte estructurado se persiste automáticamente en:
 * `artefactos/salidas/evaluacion_hibrido.json` (versión con detalle técnico del retriever).
 
 Para un análisis detallado de la arquitectura, decisiones de diseño, casos de estudio y justificación teórica, consultar el **Informe Final de Entrega** en:
-👉 [docs/INFORME_FINAL.md](docs/INFORME_FINAL.md)
+👉 [docs/INFORME_FINAL.pdf](docs/INFORME_FINAL.pdf)
