@@ -69,7 +69,7 @@ Mesa de Pedidos/
 
 ---
 
-## 🔍 3. Fase 1: RAG de Políticas y Citación Verificable (Próximo Paso)
+## 🔍 3. Fase 1: RAG de Políticas y Citación Verificable
 
 ### Conceptos Clave
 1. **¿Qué es RAG (Retrieval-Augmented Generation)?**
@@ -145,7 +145,52 @@ Para chequear los límites en tiempo real de tu cuenta:
 
 ---
 
-## 🏛️ 4. Matriz de Decisiones de Arquitectura (Consenso de Diseño)
+## 🏛️ 4. Principios y Buenas Prácticas de Ingeniería con LangGraph
+
+Para asegurar la robustez, auditabilidad y mantenibilidad del sistema en un entorno productivo, se adoptan los siguientes principios de arquitectura:
+
+### 1. Enrutamiento Declarativo vs. Ramificaciones Ocultas
+El ruteo entre estados de negocio no debe resolverse mediante bifurcaciones condicionales (`if`/`else`) ocultas dentro del cuerpo de los nodos. Toda transición de flujo se modela como **aristas condicionales explícitas** en el grafo de LangGraph. Los nodos ejecutan su lógica especializada y devuelven estado; las funciones *router* operan como pasamanos puros que leen el estado y determinan el siguiente nodo destino. Esto permite una auditoría clara y la generación transparente del diagrama arquitectónico.
+
+### 2. Persistencia Transaccional de Estados (Human-in-the-Loop)
+El patrón de interrupción interactiva con `interrupt()` requiere indispensablemente un mecanismo de persistencia transaccional duradera (`SqliteSaver` sobre `artefactos/checkpoints.sqlite`). Esto garantiza la tolerancia a fallos: el proceso puede pausarse, cerrar la sesión y ser reanudado de forma asíncrona por un operador humano mediante `Command(resume=...)` utilizando el `thread_id` del mensaje como clave de correlación.
+
+### 3. Desarrollo Guiado por Evaluación Cuantitativa (Eval-Driven Development)
+Ningún cambio en la ingeniería de prompts o en la heurística de recuperación debe validarse por intuición. Toda modificación se mide objetivamente contra el dataset de referencia (`golden_set.json`), monitoreando las dos métricas formales del proyecto: tasa de acierto de rama y precisión de extracción de datos clave.
+
+### 4. Construcción y Verificación Incremental
+El sistema se desarrolla siguiendo un orden de dependencia estricto: datos -> tools y reglas determinísticas -> esquemas estructurados -> nodos aislados -> grafo ensamblado. Cada componente se prueba exhaustivamente de forma unitaria antes de avanzar al siguiente, evitando la acumulación de deuda técnica.
+
+---
+
+## 🛠️ 5. Fase 2: Tools Comerciales y Tolerancia a Fallos en Python Puro
+
+### Conceptos Clave
+1. **Separación Estricta de Responsabilidades (Cero Alucinación Financiera):**
+   - El LLM nunca calcula sumas, porcentajes ni saldos. Toda la interacción con catálogos y cuentas corrientes se encapsula en funciones determinísticas de Python.
+2. **Anatomía de una Tool en LangChain (`@tool` + `args_schema`):**
+   - Decorador `@tool`: Expone la interfaz `BaseTool` ejecutable con `.invoke(...)`.
+   - `args_schema` (Pydantic): Valida fuertemente tipos de entrada antes de ejecutar la función.
+   - `docstring`: Documenta el propósito de la herramienta para que un LLM o agente sepa cuándo utilizarla.
+   - Las tools **informan datos duros, no deciden ruteo comercial**.
+
+### Tolerancia a Fallos y Manejo de Ambigüedad (`consultar_producto`)
+En canales conversacionales (WhatsApp), los clientes no siempre usan códigos exactos:
+- **Tolerancia a Errores Tipográficos (Typo Tolerance):**
+  Si el SKU no existe exactamente, se evalúa la cercanía de caracteres con `difflib.get_close_matches` usando un umbral (`cutoff`) del **75%**. Si el error es leve (ej: `AB-1021` vs `AB-1020`), se retorna como sugerencia sin cambiarlo a ciegas. Si la similitud es menor al 75%, se rechaza sin inventar.
+- **Resolución por Especificación Técnica:**
+  Una búsqueda como *"amoladora angular 115"* identifica con precisión `HE-4110` (115 mm) y descarta `HE-4180` (230 mm) gracias a la tokenización y coincidencia exacta de la medida.
+- **Detección Automática de Ambigüedad (Empates de Máximo Puntaje):**
+  Si dos o más productos empatan con la mejor puntuación posible (incluso coincidencia 3 de 3 o 2 de 2, como *"amoladora angular"* o *"guante ombu"*), la tool devuelve `encontrado: False` y `ambiguo: True` junto a las opciones candidatas. El sistema **jamás adivina**: eleva la decisión al operador humano en el nodo de aprobación.
+
+### Políticas de Crédito y Riesgo (`verificar_credito`)
+- **Límite:** `saldo_actual + pedido` no debe superar `limite_credito`. Si lo supera, requiere autorización gerencial.
+- **Mora Leve (30 a 60 días):** Requiere autorización de Gerencia (Art. 7).
+- **Mora Grave (>60 días o suspendido):** Inhabilitado en cuenta corriente. Solo habilitado si abona de forma anticipada (`pago_anticipado=True`).
+
+---
+
+## 🏛️ 6. Matriz de Decisiones de Arquitectura (Consenso de Diseño)
 
 A partir de la exploración del código y de las pruebas del sistema de referencia, dejamos formalmente asentadas las 6 decisiones críticas del proyecto:
 
@@ -165,16 +210,32 @@ A partir de la exploración del código y de las pruebas del sistema de referenc
   - Estructura de carpetas `datos/`, `mesa_pedidos/`, `artefactos/` creada.
   - Archivos movidos a `datos/`.
   - Creación de `.venv` y preparación de dependencias.
-- [x] **Fase 1 - Paso A (Indexación RAG completada):**
-  - Módulo `mesa_pedidos/datos.py` con normalización de caracteres y carga de CSVs.
-  - Módulo `mesa_pedidos/indexar.py` con chunking semántico por artículo/SKU.
-  - 59 vectores generados e indexados con éxito en `artefactos/indice_faiss/`.
-  - Script de diagnóstico `mesa_pedidos/ver_modelos.py` documentado.
-- [ ] **Fase 1 - Paso B (Recuperación y Citas - Próximo paso):**
-  - Retriever híbrido (BM25 + FAISS denso con MMR).
-  - Generación de respuestas con LLM citando documento y página exactos.
-- [ ] **Fase 2: Tools y Lógica Comercial en Python**
+- [x] **Fase 1: RAG de Políticas y Citación Verificable:**
+  - Módulo `mesa_pedidos/datos.py` con normalización y carga de CSVs.
+  - Módulo `mesa_pedidos/indexar.py` con chunking semántico por artículo/SKU (59 vectores).
+  - Retriever híbrido (BM25 + FAISS denso con MMR) en `mesa_pedidos/recuperacion.py`.
+  - Citación verificable probada contra el hito de flete a Neuquén ($175.000 citando pág. 1).
+- [x] **Fase 2 - Paso A (Tools Comerciales implementadas):**
+  - Módulo `mesa_pedidos/esquemas.py` con modelos Pydantic (`Cliente`, `Producto`, `RenglonValorizado`).
+  - Módulo `mesa_pedidos/utilidades.py` (`pesos`, `porcentaje`, `cuit_valido`, `registrar`).
+  - Módulo `mesa_pedidos/tools.py` con `@tool` y `args_schema` para `consultar_producto` y `verificar_credito`.
+  - Tolerancia tipográfica con `difflib` (cutoff $\ge 75\%$) y detección de ambigüedad probada.
+- [ ] **Fase 2 - Paso B (Reglas Comerciales en `reglas.py`):**
+  - Descuentos por volumen, topes de marca (15%), flete y ruteo de pedidos.
 - [ ] **Fase 3: Estado, Esquemas Pydantic y Nodos**
 - [ ] **Fase 4: Grafo y Routers Condicionales**
 - [ ] **Fase 5: Human-in-the-Loop y Consola CLI**
 - [ ] **Fase 6: Evaluación contra Golden Set**
+
+---
+
+## 📎 Anexo: Scripts de Diagnóstico y Verificación Local
+
+Durante el ciclo de desarrollo se implementaron utilidades de consola para verificar y depurar componentes individuales de manera determinística, sin incurrir en consumos de API ni requerir la ejecución del grafo completo:
+
+| Utilidad / Script | Comando de Ejecución | Propósito Técnico |
+|---|---|---|
+| **Diagnóstico de Modelos** | `py -m mesa_pedidos.ver_modelos` | Consulta los modelos y límites de tasa (RPM / RPD) habilitados en Google AI Studio para la clave actual. |
+| **Prueba de Tools Comerciales** | `py probar_tools.py` | Ejecuta casos de prueba unitarios sobre `consultar_producto` y `verificar_credito` (exactitud, typos, ambigüedad y crédito). |
+| **Inspección RAG Aislada** | `py -m mesa_pedidos.recuperacion "texto"` | Evalúa el pipeline de recuperación híbrida (BM25 + FAISS) y generación de citas verificables. |
+
