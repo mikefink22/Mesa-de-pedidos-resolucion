@@ -96,6 +96,57 @@ Mesa de Pedidos/
    - Incluir la cita en formato: `[Nombre del Documento, Página X]`.
    - Si la información no se encuentra en las políticas, indicar explícitamente que no está disponible y sugerir consultar a un operador humano.
 
+### Implementación del Módulo de Indexación (`mesa_pedidos/indexar.py`)
+El archivo implementa las tres etapas fundamentales:
+1. `cargar_paginas()`: Recorre `datos/politicas/*.pdf` con `PyPDFLoader`, asignando a cada página su documento y número de página normalizado (base 1).
+2. `partir_en_chunks()`:
+   - Filtra encabezados ("FERRETERÍA INDUSTRIAL ANDINA...") y pies repetitivos.
+   - Agrupa el contenido por artículo (`ART. \d+ - `), punto numerado (`\d+\. TITULO`) o SKU (`HE-4330`).
+   - Concatena el título formal al inicio del chunk (`Condiciones Comerciales 2026 | ART. 4...`).
+   - Aplica una red de seguridad con `RecursiveCharacterTextSplitter` solo si algún artículo supera los 1200 caracteres.
+3. `construir_indice()`:
+   - Calcula una huella digital (`_huella()`) con los hashes SHA-256 de los 4 PDFs y los parámetros de configuración.
+   - Si el índice ya existe y la huella coincide, lo carga al instante desde disco (`FAISS.load_local`) sin consumir cuota de API.
+   - Si cambió algo o no existe, genera los embeddings mediante Google Gemini (`models/text-embedding-004`) o OpenAI, crea el vectorstore y lo persiste en `artefactos/indice_faiss/` junto a `manifiesto.json`.
+
+### 🔬 Metodología de Validación del Chunking (El Caso Crítico MSG-003)
+¿Cómo sabe un Ingeniero de IA que el particionado no tiene fallos sin leer todos los fragmentos a mano?
+1. **Suma de Control Estructural:**
+   - 9 artículos en condiciones comerciales.
+   - 40 fichas de productos (SKUs).
+   - 5 puntos en logística.
+   - 5 puntos en devoluciones y garantías.
+   - **Total exacto esperado:** $9 + 40 + 5 + 5 = 59\text{ chunks}$. Ni un fragmento huérfano ni fusiones espurias.
+2. **Prueba de Excepciones Legales (Edge Case MSG-003):**
+   - El mensaje MSG-003 de la bandeja pregunta si un cliente puede devolver zapatos de seguridad por arrepentimiento.
+   - Si se usa un splitter recursivo estándar por longitud fija (ej: 900 caracteres), la regla general (*"Se aceptan devoluciones dentro de los 15 días"*) cae en un chunk y la lista de exclusiones (*"NO se aceptan devoluciones de elementos de protección personal: guantes, zapatos de seguridad..."*) cae en el siguiente chunk. El LLM respondería afirmativamente con total elocuencia, cometiendo un error costoso.
+   - **Verificación:** El chunk `[56]` (`politica_devoluciones_2026.pdf | Sección: 2. DEVOLUCION POR ARREPENTIMIENTO`) tiene 642 caracteres y reúne ambas partes inseparables en una sola ventana de contexto.
+3. **Control de Densidad Semántica:**
+   - Todos los chunks se ubican entre 150 y 808 caracteres, rango óptimo para evitar tanto la pérdida de contexto (chunks microscópicos) como la dilución de la señal vectorial (chunks kilométricos).
+
+### 💡 Gestión de Cuotas en Google AI Studio (Free Tier)
+En la consola de Google AI Studio, los nombres comerciales se corresponden con la API de la siguiente manera:
+- **`Gemini Embedding 1` / `2`** = `models/text-embedding-004`. Tiene un límite gratuito de **100 RPM** y **1.000 RPD** (Requests Per Day). Como nuestro corpus tiene 59 chunks, indexar consume menos del 6% del límite diario.
+- **Modelos Flash (Texto)** = `gemini-1.5-flash` (15 RPM, 1.500 RPD).
+- Para respetar estos límites sin costo, el pipeline incorpora:
+  1. `manifiesto.json`: indexa una sola vez y no vuelve a llamar a la API si los archivos no cambiaron.
+  2. Pausa de cortesía (rate-limiting) en la evaluación masiva del Golden Set.
+
+---
+
+## 🏛️ 4. Matriz de Decisiones de Arquitectura (Consenso de Diseño)
+
+A partir de la exploración del código y de las pruebas del sistema de referencia, dejamos formalmente asentadas las 6 decisiones críticas del proyecto:
+
+| Dimensión | Decisión Acordada | Justificación Técnica |
+|---|---|---|
+| **Estrategia de Chunking** | Semántico por Artículos y SKUs (`_chunks_por_articulo`) | Evita la fragmentación arbitraria. Mantiene las excepciones y listas de exclusión (ej. calzado de seguridad en devoluciones) unidas a sus reglas principales. Genera 59 chunks estructurados. |
+| **Generación de Citas** | Índices numéricos del LLM traducidos por Python | El LLM solo devuelve `fuentes: [1, 3]`; Python lee los metadatos reales del chunk (`documento`, `pagina`). Imposibilita alucinaciones de archivos o páginas inexistentes. |
+| **Lógica Comercial** | Funciones puras determinísticas en `reglas.py` | La matemática, las escalas de descuento por volumen, los topes por marca (15% en herramientas eléctricas) y el cálculo de crédito no se delegan al LLM. Routers del grafo operan como pasamanos de estado. |
+| **Diseño Human-in-the-Loop** | Evitar la doble ejecución de `interrupt()` | Como LangGraph reinicia el nodo desde la primera línea al reanudar el checkpoint, solo se ubica lectura del payload arriba de `interrupt()`. Las validaciones con Pydantic y posibles recálculos corren abajo. Si la decisión es inválida, se rechaza por defecto. |
+| **Evaluación del Golden Set** | Registro previo de interrupción (`hubo_interrupt`) | Al evaluar el Golden Set, se registra si el grafo se frenó en `aprobacion_humana` *antes* de reanudar, garantizando que el sistema sea evaluado por saber cuándo pedir aprobación. |
+| **Recuperación RAG** | Híbrida ponderada (0.4 BM25 / 0.6 Denso) | BM25 con tokenizador regex preserva códigos técnicos enteros (ej. `he-4330`) y normaliza tildes; el denso captura similitud semántica y paráfrasis. |
+
 ---
 
 ## 📈 Bitácora de Progreso

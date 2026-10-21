@@ -18,30 +18,20 @@ RAIZ = Path(__file__).resolve().parent
 load_dotenv(RAIZ / ".env")
 
 # ---------------------------------------------------------------------------
-# 1. Configuración de Modelos y Proveedores
+# 1. Configuración de Modelos (Google Gemini - Stack Oficial)
 # ---------------------------------------------------------------------------
-# Proveedor activo: "google" u "openai" (configurable acá o por variable de entorno)
-PROVEEDOR = os.getenv("PROVEEDOR_IA", "google").lower()
-
-# Catálogo de modelos y claves requeridas por proveedor
-CONFIG_PROVEEDORES = {
-    "google": {
-        "llm": "gemini-1.5-flash",
-        "embeddings": "models/text-embedding-004",
-        "env_keys": ["GOOGLE_API_KEY", "GEMINI_API_KEY"],
-    },
-    "openai": {
-        "llm": "gpt-4o-mini",
-        "embeddings": "text-embedding-3-small",
-        "env_keys": ["OPENAI_API_KEY"],
-    },
-}
-
-# Modelos activos (visibles y editables directamente en el código)
-_cfg_actual = CONFIG_PROVEEDORES.get(PROVEEDOR, CONFIG_PROVEEDORES["google"])
-MODELO_LLM = os.getenv("MODELO_LLM", _cfg_actual["llm"])
-MODELO_EMBEDDINGS = os.getenv("MODELO_EMBEDDINGS", _cfg_actual["embeddings"])
+PROVEEDOR = "google"
+MODELO_LLM = "gemini-1.5-flash"
+MODELO_EMBEDDINGS = "models/text-embedding-004"
 TEMPERATURA = 0.0
+
+# Nombres de variables de entorno aceptadas para Google Gemini
+CLAVES_ENV_GOOGLE = ["GOOGLE_API_KEY", "GEMINI_API_KEY"]
+
+# (Opcional: Respaldo para OpenAI, dejado como referencia comentada)
+# PROVEEDOR_BACKUP = "openai"
+# MODELO_LLM_BACKUP = "gpt-4o-mini"
+# MODELO_EMBEDDINGS_BACKUP = "text-embedding-3-small"
 
 # ---------------------------------------------------------------------------
 # 2. Rutas del Sistema
@@ -111,26 +101,25 @@ CUIT_EMPRESA = "30-71204598-8"
 # ---------------------------------------------------------------------------
 # 5. Funciones de Validación de Entorno
 # ---------------------------------------------------------------------------
-def obtener_clave_api(proveedor: str = PROVEEDOR) -> str | None:
-    """Busca la clave correspondiente al proveedor configurado."""
-    keys = CONFIG_PROVEEDORES.get(proveedor, {}).get("env_keys", [])
-    for key in keys:
+def obtener_clave_api() -> str | None:
+    """Busca la clave de Google Gemini en las variables de entorno."""
+    for key in CLAVES_ENV_GOOGLE:
         val = os.getenv(key)
         if val:
             return val
     return None
 
 
-def hay_clave(proveedor: str = PROVEEDOR) -> bool:
+def hay_clave() -> bool:
     """Verifica si la clave de API está presente en las variables de entorno."""
-    return bool(obtener_clave_api(proveedor))
+    return bool(obtener_clave_api())
 
 
 def verificar_entorno() -> None:
     """Valida el entorno antes de iniciar la ejecución con un mensaje claro."""
     if not hay_clave():
-        keys_esperadas = " o ".join(CONFIG_PROVEEDORES.get(PROVEEDOR, {}).get("env_keys", ["API_KEY"]))
+        keys_esperadas = " o ".join(CLAVES_ENV_GOOGLE)
         raise RuntimeError(
-            f"Falta la clave de API para el proveedor '{PROVEEDOR}'. "
+            f"Falta la clave de API de Google Gemini. "
             f"Asegúrate de definir {keys_esperadas} en tu archivo .env."
         )

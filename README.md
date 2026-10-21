@@ -83,6 +83,20 @@ El flujo cuenta con 9 nodos, 3 routers condicionales y 5 hojas:
    ```
    *(Nota de seguridad: el archivo `.env` está estrictamente ignorado en `.gitignore` para no filtrar credenciales).*
 
+### 💡 Guía para Cuota Gratuita de Google AI Studio (Free Tier)
+
+No es necesario contar con una cuenta de pago de Google Cloud; el proyecto funciona completamente dentro de los límites de la **capa gratuita (Free Tier)** de Google AI Studio:
+
+| Tarea | Modelo de API | Equivalente en Dashboard | Límites Capa Gratuita |
+|---|---|---|---|
+| **Embeddings (RAG)** | `models/text-embedding-004` | `Gemini Embedding 1` / `2` | **100 RPM** · 30K TPM · **1.000 RPD** |
+| **LLM Principal** | `gemini-1.5-flash` | Modelos de texto Flash | **15 RPM** · 1M TPM · **1.500 RPD** |
+| **Alternativa económica** | `gemini-1.5-flash-8b` | Flash Lite | **15 RPM** · 250K TPM · **500 RPD** |
+
+**Consejos para no agotar la cuota gratuita:**
+- **Indexación:** Indexar los 4 PDFs solo consume 59 fragmentos en un solo lote (menos del 6% del límite diario de 1.000 RPD). Gracias al `manifiesto.json`, solo se ejecuta una sola vez.
+- **Evaluación en lote (`evaluar.py`):** Como la cuota gratuita de texto tiene un límite de 15 peticiones por minuto (RPM), el script de evaluación debe incluir una pausa de 2 a 3 segundos entre mensajes para no recibir errores `429 ResourceExhausted`.
+
 ---
 
 ## 🎛️ 4. Configuración del Proyecto (`config.py`)
