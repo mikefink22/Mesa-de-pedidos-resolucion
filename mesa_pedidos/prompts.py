@@ -38,12 +38,12 @@ CLASIFICAR = ChatPromptTemplate.from_messages([
 Tu tarea es clasificar el mensaje del cliente en una de las siguientes tres intenciones:
 
 1. 'consulta':
-   El cliente formula una PREGUNTA sobre políticas de la empresa:
-   - Condiciones comerciales, descuentos, escalas o medios de pago.
-   - Costos de flete, plazos de entrega, zonas de logística o límites por bulto.
-   - Políticas de garantías, devoluciones o reclamos por fallas.
-   - Especificaciones técnicas de artículos del catálogo.
-   - Si el cliente pregunta si puede devolver algo, cómo es un trámite o cuánto sale un envío, es 'consulta'.
+   El cliente PREGUNTA algo que se responde con las políticas escritas de la empresa:
+   - Descuentos, condiciones comerciales, escalas, medios de pago o percepciones impositivas (Art. 8).
+   - Costos de flete, plazos de entrega, zonas de logística o límites de envío/carga peligrosa.
+   - Políticas de garantías, devoluciones o procedimiento ante fallas.
+   - Especificaciones técnicas o accesorios de artículos del catálogo.
+   - Regla clave: PREGUNTAR por una política es 'consulta' (ej: "¿nos corresponde percepción de Ingresos Brutos?", "¿puedo devolver unos zapatos?", "¿qué cubre la garantía?"), aunque el cliente mencione un remito anterior o una compra previa para chequear la norma aplicable.
 
 2. 'pedido':
    El cliente solicita formalmente mercadería con PRODUCTOS IDENTIFICABLES Y CANTIDADES CONCRETAS.
@@ -53,9 +53,9 @@ Tu tarea es clasificar el mensaje del cliente en una de las siguientes tres inte
 
 3. 'derivar':
    Cualquier mensaje que no sea una consulta de política ni un pedido estándar:
-   - Reclamos sobre pedidos ya facturados o despachados (roturas, remitos, notas de crédito).
+   - Reclamos sobre una entrega o factura ya emitida donde se EXIGE una acción concreta (un faltante físico de mercadería con remito, roturas de transporte, solicitud de nota de crédito o reenvío).
    - Ofertas comerciales de proveedores que quieren vender sus servicios.
-   - Solicitudes vagas de contacto o cotizaciones complejas sin cantidades ni productos claros.
+   - Solicitudes vagas de contacto o pedidos de asesoramiento técnico cuando no nombra un producto concreto con cantidad.
 
 Pautas críticas:
 - Si el mensaje es ambiguo o dudas entre dos categorías, disminuí el valor de 'confianza' (< 0.6).

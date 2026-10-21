@@ -394,11 +394,18 @@ def calculos_para_consulta(texto: str, cliente: Optional[dict[str, Any]]) -> str
         lineas.append(f"Para un pedido de {pesos(monto)} neto: descuento por volumen {porcentaje(vol)} (Art. 4)")
         if cliente:
             flete = cotizar_flete(cliente["provincia"], cliente["localidad"], monto)
-            if flete["zona"] is not None:
-                lineas.append(
-                    f"  Flete a {cliente['localidad']} ({cliente['provincia']}): {flete['detalle']}. "
-                    f"Costo final estimado de flete: {pesos(flete['costo'])}."
-                )
+            if flete["zona"] is None:
+                continue
+            umbral = (
+                f"se bonifica al 100% cuando el neto supera {pesos(UMBRAL_BONIFICACION_ZONAS_1_3)}"
+                if flete["zona"] <= 3 else
+                f"se bonifica al 50% desde {pesos(UMBRAL_BONIFICACION_50_ZONAS_4_5)} y al 100% desde {pesos(UMBRAL_BONIFICACION_100_ZONAS_4_5)}"
+            )
+            lineas.append(
+                f"  Flete a {cliente['localidad']} ({cliente['provincia']}): {flete['detalle']}. "
+                f"En zona {flete['zona']} {umbral} (Logística, Punto 3). "
+                f"Con {pesos(monto)} el flete cuesta {pesos(flete['costo'])}."
+            )
     return "\n".join(lineas) or "(la pregunta no menciona montos específicos)"
 
 
