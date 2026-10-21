@@ -232,6 +232,7 @@ def _resolver_items_catalogo(pedido: dict[str, Any]) -> tuple[list[dict[str, Any
         })
         
         if info.get("encontrado"):
+            info["cantidad"] = item.get("cantidad", 1)
             resueltos.append(info)
             if info.get("inferido_por_descripcion"):
                 inferidos.append(info["sku"])
@@ -242,6 +243,7 @@ def _resolver_items_catalogo(pedido: dict[str, Any]) -> tuple[list[dict[str, Any
                 "sku": sku_sugerido,
                 "cantidad": item.get("cantidad", 1),
             })
+            prod_info["cantidad"] = item.get("cantidad", 1)
             resueltos.append(prod_info)
             inferidos.append(sku_sugerido)
         else:
@@ -278,7 +280,7 @@ def _calcular_totales_pedido(
     
     # Contar unidades de aerosoles para recargo de carga peligrosa (Logística, Punto 5)
     unidades_aerosol = sum(
-        i["cantidad"] for i in items if "aerosol" in normalizar_texto(i.get("nombre", ""))
+        i.get("cantidad", i.get("cantidad_pedida", 1)) for i in items if "aerosol" in normalizar_texto(i.get("nombre", ""))
     )
     
     flete = reglas.cotizar_flete(

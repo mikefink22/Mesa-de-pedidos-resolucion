@@ -251,6 +251,136 @@ def ruta_post_aprobacion(state: EstadoMesa) -> str:
 
 ---
 
+## 🛑 6. Fase 5: Human-in-the-Loop (HITL) y Consola CLI
+
+### ¿Por qué Human-in-the-Loop en IA Engineering?
+En un sistema comercial real, ningún modelo de lenguaje ni script automático debe autorizar por sí solo operaciones de alto riesgo crediticio o financiero. Cuando un pedido supera el límite de crédito o el cliente registra mora comercial superior a 30 días, el sistema debe pausar su ejecución y requerir la supervisión de un operador humano calificado (Gerencia Comercial).
+
+LangGraph provee soporte nativo de primer nivel para este patrón a través de la primitiva `interrupt()`.
+
+### El Ciclo de Vida de `interrupt()` y `Command(resume=...)`
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Cliente
+    participant Grafo as LangGraph Engine
+    participant Checkpoint as SqliteSaver (Disco)
+    actor Gerente as Operador Humano
+
+    Cliente->>Grafo: Envía Pedido (excede crédito)
+    Grafo->>Grafo: clasificar -> extraer_pedido -> validar_pedido
+    Note over Grafo: validar_pedido detecta alerta y sugiere 'aprobacion_humana'
+    Grafo->>Grafo: aprobacion_humana ejecuta interrupt(payload)
+    Grafo->>Checkpoint: Guarda snapshot del estado actual en checkpoints.sqlite
+    Grafo-->>Gerente: Proceso frena y expone payload con alertas y totales
+    Note over Gerente: La terminal puede cerrarse o reiniciarse. El estado persiste.
+    Gerente->>Grafo: Reanuda con Command(resume={"tipo": "aprobar", "razon": "..."})
+    Grafo->>Checkpoint: Carga último snapshot del thread_id
+    Note over Grafo: Reanuda en aprobacion_humana SIN reprocesar nodos anteriores
+    Grafo->>Grafo: Router 3 bifurca a confirmar_pedido -> END
+    Grafo-->>Cliente: Envía confirmación formal con número de pedido
+```
+
+### Conceptos Clave de Arquitectura:
+
+1. **`thread_id` (Aislamiento de Conversaciones):**
+   - Formato: `f"mensaje-{mensaje_id}"` (ej: `mensaje-MSG-013`).
+   - Cada mensaje de la bandeja posee su propio hilo en el checkpointer.
+   - Permite que el sistema procese mensajes en paralelo y retome exactamente el hilo correcto sin mezclar clientes ni carritos.
+
+2. **Durabilidad Transaccional (`SqliteSaver`):**
+   - Los checkpoints se persisten en `artefactos/checkpoints.sqlite`.
+   - Si el operador apaga la máquina o cancela con `Ctrl+C`, la corrida queda en pausa. Al volver a ejecutar `py correr.py --mensaje MSG-013`, el sistema detecta que el hilo estaba pausado y lo retoma sin consumir llamadas adicionales al LLM en `clasificar` o `extraer_pedido`.
+
+3. **Anatomía del Snapshot y Detección de Pausa:**
+   - `snapshot = grafo.get_state(config)`:
+     - `snapshot.next`: Tupla con los nodos que restan ejecutar. Si no está vacía al terminar la corrida, el grafo está frenado.
+     - `snapshot.tasks[i].interrupts`: Lista de interrupciones activas. `interrupt.value` contiene el diccionario con los datos del pedido que Gerencia Comercial necesita ver.
+
+4. **Prevención de Deadlocks en SQLite:**
+   - Durante la iteración de `checkpointer.list(None)`, la base de datos SQLite mantiene bloqueada la conexión.
+   - Si dentro del mismo bucle invocamos `get_state()`, se genera un bloqueo mutuo permanente (*deadlock*).
+   - **Solución en `ejecucion.py`:** Primero se recolectan todos los `thread_id` en un conjunto (`set`) en memoria, y recién después se consulta el estado de cada uno.
+
+5. **El Motor Modular (`mesa_pedidos/ejecucion.py`):**
+   - Desacopla la lógica de ejecución del grafo de la consola CLI.
+   - Provee las funciones fundamentales:
+     - `thread_de(mensaje_id)`: Genera el string del thread (`f"mensaje-{mensaje_id}"`).
+     - `config_de(thread_id, retriever)`: Construye el diccionario de configuración para LangGraph.
+     - `iniciar(grafo, mensaje, cfg, al_pasar)`: Inicia una corrida desde el estado inicial con streaming de actualizaciones.
+     - `retomar(grafo, decision, cfg, al_pasar)`: Reanuda usando `Command(resume=decision)`.
+     - `pendientes(grafo)` / `listar_pendientes`: Lista todos los hilos que están esperando decisión de Gerencia (con prevención de deadlock).
+     - `borrar_thread(grafo, thread_id)`: Limpia el historial para arrancar de cero.
+     - `estado_de(grafo, cfg)`: Consulta el snapshot actual de un hilo.
+
+6. **Consola CLI (`correr.py`):**
+   - Ofrece una interfaz de usuario limpia e interactiva:
+     - `--mensaje <ID>`: Procesa un mensaje por su código de bandeja. Si estaba pendiente, lo retoma directamente sin reprocesar.
+     - `--pendientes`: Lista en formato tabla todos los pedidos que aguardan autorización.
+     - `--decision <aprobar|editar|rechazar>` y `--razon`: Permite resolver sin preguntar por consola.
+     - Modo interactivo: Desglosa ítems, alerta comercial, y solicita decisión con opción de editar SKUs y descuento autorizado.
+     - `--todos`: Procesa los 20 mensajes de la bandeja en lote.
+     - `--grafo`: Imprime la topología del sistema en sintaxis Mermaid.
+     - Manejo de `KeyboardInterrupt` (Ctrl+C): Notifica al usuario que el pedido quedó persistido y explica cómo retomarlo.
+
+7. **Suite de Pruebas (`tests/test_ejecucion.py`):**
+   - Diseñada con grafos y mensajes sintéticos para cumplir la regla de **cero contaminación del Golden Set**:
+     - Emisión y validación del payload de interrupción en `interrupt()`.
+     - Durabilidad SQLite al cerrar la conexión ("cerrar la terminal"), reabrir un nuevo proceso/grafo y retomar con aprobación.
+     - Reanudación con rechazo.
+     - Limpieza de hilos mediante `borrar_thread()`.
+
+> [!NOTE] Análisis Crítico: Contradicción en el Art. 5 y el Caso de la Licitación (MSG-016)
+> Existe una tensión de diseño evidente entre la letra de las políticas corporativas y la implementación en código, visible con claridad en el caso de **`MSG-016` (Cuyo Insumos)**, donde el cliente gana una licitación grande y solicita expresamente un **25% de descuento**:
+> 
+> 1. **La contradicción en el texto del Art. 5:**
+>    - *Primera frase:* "El descuento total (...) no puede superar el 20% del precio de lista." (Define un techo corporativo absoluto).
+>    - *Tercera frase:* "Cualquier descuento solicitado por encima del 20% requiere autorización expresa de la Gerencia Comercial antes de confirmar el pedido." (Insinúa que Gerencia tiene la potestad de avalar excepciones por encima del 20%).
+> 
+> 2. **El disparador en el Grafo (`decidir_ruta`):**
+>    Cuando un pedido pide más del 20% (como en `MSG-016`), la regla detecta `descuento_solicitado > 20.0%` y **frena el flujo enviándolo a Gerencia Comercial** bajo la alerta: `"Pide 25.0% de descuento: supera el tope de 20.0% (Art. 5)"`.
+> 
+> 3. **La resolución en el código de referencia (`reglas.valorizar`):**
+>    En el código oficial del curso, la función aplica `pct = min(general, tope_del_producto)`, donde `tope_del_producto` devuelve siempre un máximo de **20%** (y 15% en herramientas eléctricas DeWalt/Makita/Bosch). 
+>    Por ende, aun cuando Gerencia autorice el pedido en la consola, **el motor de cálculo numérico fuerza el tope del 20%** en los renglones facturados. En la práctica del ejercicio, la intervención gerencial actúa como un filtro que decide si se le otorga el tope máximo legal permitido (20%) o si se rechaza la licitación, pero el software no permite perforar el margen del 20% en mercadería. La única forma de que el cliente perciba un beneficio mayor al 20% es sumando el 3% de pago anticipado (Art. 6, por fuera del tope comercial) y la bonificación total del flete.
+
+---
+
+### ⚡ Concurrencia y Condición de Carrera (Race Conditions) en Producción
+
+#### ¿Es necesario manejar concurrencia en este desafío?
+Para el alcance actual del desafío (consola CLI interactiva y procesamiento en lote local), la ejecución es **secuencial** (un mensaje tras otro en el mismo proceso), por lo que no hay riesgo inmediato de colisiones en tiempo de ejecución.
+
+Sin embargo, al pensar como **IA Engineers en un entorno real de producción** (donde cientos de clientes envían mensajes por WhatsApp y correo simultáneamente mediante webhooks de FastAPI), surgen desafíos críticos de concurrencia:
+
+#### 1. Concurrencia a Nivel de Grafo (`thread_id`):
+- Como cada mensaje posee un `thread_id` independiente (`mensaje-MSG-001`, `mensaje-MSG-002`), **LangGraph aísla los estados de forma natural**. Dos ejecuciones simultáneas no colisionan en la memoria del grafo.
+
+#### 2. Concurrencia a Nivel de Checkpointer (SQLite vs. PostgreSQL):
+- `SqliteSaver` utiliza un bloqueo a nivel de archivo (*file-level locking*) para las escrituras. Si dos procesos intentan guardar checkpoints en la misma milésima de segundo, uno de ellos puede fallar con `sqlite3.OperationalError: database is locked`.
+- **Mejora en Producción:** Reemplazar `SqliteSaver` por `PostgresSaver` (`langgraph-checkpoint-postgres`), aprovechando transacciones ACID concurrentes por fila y pool de conexiones (*connection pooling* con PgBouncer).
+
+#### 3. Concurrencia a Nivel de Lógica Comercial (Condición de Carrera / Race Condition):
+Este es el punto más delicado y crítico:
+- **Stock Fantasma (Overselling):** Si quedan 5 unidades del SKU `HE-4110` y dos clientes envían pedidos simultáneos solicitando 5 unidades cada uno:
+  - En la arquitectura actual con CSVs en memoria, ambos pedidos leerán que hay stock (5 $\ge$ 5).
+  - Ambos pedidos pasarán la validación, confirmando 10 unidades vendidas cuando solo existen 5 en el depósito.
+- **Límite de Crédito Superado:** Si un cliente con crédito disponible de \$1.000.000 envía dos pedidos de \$800.000 al mismo tiempo por canales diferentes, ambos validarán que \$800.000 $\le$ \$1.000.000, autorizando compras por \$1.600.000 y dejando a la empresa desprotegida.
+
+#### 💡 Roadmap de Mejoras Enterprise:
+1. **Migración a Base Relacional con Bloqueo Pesimista:** Reemplazar los CSVs por PostgreSQL ejecutando consultas atómicas:
+   ```sql
+   SELECT stock FROM catalogo WHERE sku = 'HE-4110' FOR UPDATE;
+   ```
+2. **Patrón de Reserva Provisoria con Expiración (*Two-Phase Hold con TTL*):**
+   - Cuando un pedido entra en `aprobacion_humana`, el stock y el cupo crediticio se marcan como *reservados temporalmente* (ej. por 24 horas con un TTL en Redis o Postgres).
+   - Si Gerencia aprueba, la reserva pasa a estado definitivo.
+   - Si Gerencia rechaza o transcurren 24 horas sin resolución, la reserva expira automáticamente y el stock vuelve a estar disponible para otros clientes.
+3. **Checkpointer Escalable:** Migración de `SqliteSaver` a `PostgresSaver`.
+
+---
+
 ## 📈 Bitácora de Progreso
 - [x] **Fase 0: Setup y Estructura:**
   - Estructura de carpetas `datos/`, `mesa_pedidos/`, `artefactos/` creada.
@@ -281,7 +411,12 @@ def ruta_post_aprobacion(state: EstadoMesa) -> str:
   - Módulo `mesa_pedidos/nodos.py` con los 9 nodos de responsabilidad única y cero `if` de ruteo internos.
   - Módulo `mesa_pedidos/grafo.py` conectando los 3 routers (`ruta_por_intencion`, `ruta_por_validacion`, `ruta_post_aprobacion`), aristas a `END`, `RetryPolicy` y persistencia con `SqliteSaver`.
   - Suite `tests/test_grafo.py` validando compilación de `StateGraph`, presencia de los 9 nodos y exportación Mermaid.
-- [ ] **Fase 5: Human-in-the-Loop y Consola CLI**
+- [x] **Fase 5: Human-in-the-Loop y Consola CLI:**
+  - Módulo `mesa_pedidos/ejecucion.py` con motor desacoplado (`iniciar`, `retomar`, `pendientes`, `borrar_thread`).
+  - Detección de pausas por `interrupt()` y reanudación limpia con `Command(resume=...)`.
+  - Persistencia transaccional durable en SQLite sobre `artefactos/checkpoints.sqlite` resistente a cierres de terminal.
+  - Script interactivo de consola `correr.py` con soporte para banderas `--mensaje`, `--pendientes`, `--decision`, `--reiniciar`, `--todos` y `--grafo`.
+  - Suite de pruebas `tests/test_ejecucion.py` validando la plomería de interrupción, durabilidad y reanudación con grafos sintéticos.
 - [ ] **Fase 6: Evaluación contra Golden Set**
 
 ---

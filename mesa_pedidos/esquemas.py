@@ -11,7 +11,7 @@ Define los esquemas fuertemente tipados que:
 from __future__ import annotations
 
 from typing import Any, Literal, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ===========================================================================
@@ -101,7 +101,7 @@ class ItemPedido(BaseModel):
     )
     descripcion: str = Field(description="Nombre o descripción textual provista por el cliente.")
     cantidad: int = Field(gt=0, description="Cantidad solicitada (número entero positivo).")
-    aclaracion: str = Field(default="", description="Detalles adicionales, marca o medidas.")
+    aclaracion: Optional[str] = Field(default=None, description="Detalles adicionales, marca o medidas.")
 
     @field_validator("sku")
     @classmethod
@@ -110,6 +110,13 @@ class ItemPedido(BaseModel):
             return None
         v = v.strip().upper().replace(" ", "")
         return v or None
+
+    @field_validator("aclaracion", mode="before")
+    @classmethod
+    def normalizar_aclaracion(cls, v: Any) -> Optional[str]:
+        if v is None:
+            return ""
+        return str(v)
 
 
 class PedidoExtraido(BaseModel):
@@ -167,6 +174,17 @@ class DecisionHumana(BaseModel):
         default="Gerencia Comercial",
         description="Nombre o rol del operador o directivo que toma la decisión."
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalizar_ediciones(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            data = dict(data)
+            if "items_editados" in data and "ediciones" not in data:
+                data["ediciones"] = data["items_editados"]
+            elif "ediciones" in data and "items_editados" not in data:
+                data["items_editados"] = data["ediciones"]
+        return data
 
     @property
     def items_editados(self) -> dict[str, int]:

@@ -108,7 +108,7 @@ def valorizar(
     4. Pago anticipado: 3% financiero sobre el neto de mercadería (Art. 6), por fuera del tope.
     5. IVA: Calculado según la alícuota de cada artículo en el catálogo.
     """
-    bruto = sum(i["cantidad"] * i["precio_lista"] for i in items)
+    bruto = sum(i.get("cantidad", i.get("cantidad_pedida", 1)) * i["precio_lista"] for i in items)
     volumen = descuento_por_volumen(bruto)
     comercial = float(cliente.get("descuento_habitual", 0.0)) + volumen
 
@@ -132,7 +132,8 @@ def valorizar(
     for i in items:
         tope = tope_del_producto(i["rubro"], i["marca"])
         pct = min(general, tope)
-        subtotal_lista = i["cantidad"] * i["precio_lista"]
+        cant = i.get("cantidad", i.get("cantidad_pedida", 1))
+        subtotal_lista = cant * i["precio_lista"]
         subtotal_neto = round(subtotal_lista * (1 - pct / 100), 2)
         
         renglones.append(
@@ -141,7 +142,7 @@ def valorizar(
                 nombre=i["nombre"],
                 marca=i["marca"],
                 rubro=i["rubro"],
-                cantidad=i["cantidad"],
+                cantidad=cant,
                 precio_unitario=i["precio_lista"],
                 subtotal_lista=round(subtotal_lista, 2),
                 descuento_pct=pct,
