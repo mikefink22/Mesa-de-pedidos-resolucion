@@ -1,0 +1,705 @@
+{
+  "fecha": "2026-10-21T09:36:25",
+  "modelo_llm": "gemini-3.8-flash",
+  "modelo_embeddings": "models/gemini-embedding-001",
+  "retriever": "hibrido",
+  "pesos_hibrido": [
+    0.4,
+    0.6
+  ],
+  "chunking": "articulos",
+  "chunk_size": 900,
+  "k_recuperacion": 4,
+  "resumen": {
+    "total_casos": 20,
+    "ruteo": "20/20 (100.0%)",
+    "ruteo_pct": 100.0,
+    "dato_clave": "8/8 (100.0%)",
+    "dato_clave_pct": 100.0,
+    "intencion": "20/20 (100.0%)",
+    "documento_citado": "8/8 (100.0%)",
+    "items_precision": 1.0,
+    "items_recall": 1.0
+  },
+  "casos": [
+    {
+      "id": "MSG-001",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimados, les informamos que el flete no se encuentra bonificado para este importe de compra.\n\nPara su localidad de Villa María (Zona 2 - Interior de Córdoba), el flete se bonifica al 100% únicamente cuando el monto neto del pedido supera los $1.500.000,00. Al tratarse de una compra de $1.200.000,00 netos, el costo del envío es de $68.000,00 (con un plazo de entrega habitual de 3 a 4 días hábiles).\n\nRespecto a su consulta sobre la escala comercial, por un monto neto de $1.200.000,00 les corresponde un 5% de descuento por volumen, aplicable sobre el precio de lista antes de IVA y percepciones (tramo de $1.000.000,00 a $2.999.999,00).\n\nQuedamos a disposición para cualquier consulta adicional o para avanzar con la preparación de su pedido.\n\n[Fuente: condiciones_comerciales_2026.pdf, pág. 1; logistica_fletes_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-001 ingresado por canal whatsapp",
+        "09:30:38 | cargar_cliente     | Ferreteria El Tornillo Feliz S.R.L. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $3.220.000,00",
+        "09:30:44 | clasificar         | consulta (confianza 0.98) - El cliente consulta sobre las políticas comerciales de la empresa: escalas de descuento por volumen de compra y condiciones de bonificación del flete. No realiza un pedido concreto ni un reclamo.",
+        "09:30:54 | responder_consulta | RAG respondida con citas | 2 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "condiciones_comerciales_2026.pdf",
+        "logistica_fletes_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-002",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Buenos días. Para las entregas en Neuquén (Zona 5 - Patagonia), el costo del flete es de $175.000 por envío y el plazo de entrega estimado es de 8 a 12 días hábiles. Quedamos a su disposición para coordinar el pedido con la debida anticipación para su parada de planta.\n\n[Fuente: logistica_fletes_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-002 ingresado por canal email",
+        "09:30:56 | cargar_cliente     | Talleres Patagonia S.A. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $5.020.000,00",
+        "09:31:01 | clasificar         | consulta (confianza 0.98) - El cliente consulta por plazos de entrega y costos de flete a Neuquén Capital, lo cual se responde con las políticas logísticas y de envío de la empresa.",
+        "09:31:06 | responder_consulta | RAG respondida con citas | 1 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "logistica_fletes_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-003",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimado Roberto, lamentablemente no es posible realizar la devolución de los zapatos de seguridad. \n\nDe acuerdo con nuestras políticas institucionales, no se aceptan devoluciones por arrepentimiento ni cambios de elementos de protección personal de uso individual (como barbijos, guantes y zapatos de seguridad) por razones de higiene. \n\nQuedamos a tu entera disposición por cualquier otra consulta sobre tus pedidos.\n\n[Fuente: politica_devoluciones_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-003 ingresado por canal whatsapp",
+        "09:31:08 | cargar_cliente     | Roberto Gimenez Herramientas | Cat. C | Estado: activo | Mora: 0 d | Crédito disp.: $590.000,00",
+        "09:31:13 | clasificar         | consulta (confianza 0.95) - El cliente consulta por la política y viabilidad de devolución o cambio de talle de un producto comprado previamente, lo cual corresponde a una consulta de política de la empresa.",
+        "09:31:20 | responder_consulta | RAG respondida con citas | 1 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "politica_devoluciones_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-004",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimados, les informamos que el atornillador de impacto (SKU HE-4330) no incluye batería ni cargador, ya que se comercializa sin estos accesorios. \n\nLa batería compatible para este equipo corresponde al SKU HE-4335 (batería de litio de 18 V y 4,0 Ah). Quedamos a su disposición ante cualquier otra consulta.\n\n[Fuente: fichas_tecnicas_2026.pdf, pág. 1; fichas_tecnicas_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-004 ingresado por canal email",
+        "09:31:22 | cargar_cliente     | Metalurgica San Jorge S.A. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $1.550.000,00",
+        "09:31:26 | clasificar         | consulta (confianza 0.95) - El cliente consulta sobre las especificaciones y accesorios incluidos de un producto del catálogo (SKU HE-4330) y el código de la batería compatible.",
+        "09:31:31 | responder_consulta | RAG respondida con citas | 2 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "fichas_tecnicas_2026.pdf",
+        "fichas_tecnicas_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-005",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimados, buen día. Lamentablemente, el presupuesto emitido el 10 de septiembre ya no se encuentra vigente. \n\nSegún nuestras políticas comerciales, los presupuestos emitidos por la Mesa de Pedidos mantienen sus precios durante 5 días hábiles y luego caducan de forma automática. Al haber transcurrido dicho plazo a la fecha, será necesario solicitar una nueva cotización con los precios actualizados. \n\nQuedamos a su disposición si desean que les preparemos un nuevo presupuesto.\n\n[Fuente: condiciones_comerciales_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-005 ingresado por canal whatsapp",
+        "09:31:33 | cargar_cliente     | Distribuidora Cuyo Insumos S.A. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $2.300.000,00",
+        "09:31:40 | clasificar         | consulta (confianza 0.90) - El cliente consulta sobre la vigencia temporal de una cotización previa, lo cual remite a las condiciones comerciales y políticas de validez de presupuestos de la empresa.",
+        "09:31:56 | responder_consulta | RAG respondida con citas | 1 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "condiciones_comerciales_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-006",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimados, buenas tardes. Les confirmamos que las herramientas eléctricas cuentan con 12 meses de garantía de fábrica desde la fecha de factura por fallas de fabricación, por lo que su equipo se encuentra dentro del plazo de cobertura.\n\nRespecto al trámite, la gestión se realiza en el service oficial de la marca, actuando Ferretería Industrial Andina como gestor para canalizar la revisión.\n\nTengan en cuenta que la garantía no cubre problemas originados por uso indebido, sobrecarga, falta de mantenimiento, conexión a tensión incorrecta o intervención de terceros no autorizados, así como tampoco el desgaste normal de piezas consumibles (como carbones, escobillas, mandriles o discos), lucro cesante ni costos de reemplazo temporal.\n\nQuedamos a disposición para coordinar la gestión de la herramienta con el servicio técnico oficial.\n\n[Fuente: politica_devoluciones_2026.pdf, pág. 1; politica_devoluciones_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-006 ingresado por canal email",
+        "09:31:58 | cargar_cliente     | Cooperativa de Trabajo Sur Ltda. | Cat. C | Estado: activo | Mora: 0 d | Crédito disp.: $780.000,00",
+        "09:32:02 | clasificar         | consulta (confianza 0.95) - El cliente consulta sobre la cobertura de la garantía y el procedimiento ante fallas, lo cual corresponde a una consulta sobre las políticas de la empresa.",
+        "09:32:17 | responder_consulta | RAG respondida con citas | 2 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "politica_devoluciones_2026.pdf",
+        "politica_devoluciones_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-007",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimados, respecto a su consulta sobre el envío de aerosoles (químicos inflamables / lubricantes penetrantes), la normativa de transporte indica que viajan como carga peligrosa y tienen un tope máximo de 24 unidades por envío para las zonas 4 y 5 (con un recargo del 15% sobre el flete). Sin embargo, en los fragmentos de políticas disponibles no se encuentra detallada la tabla de zonificación logística para determinar a qué zona corresponde Santa Rosa (La Pampa). Por este motivo, derivamos su inquietud a su asesor comercial para que pueda confirmarles con exactitud las condiciones aplicables a su localidad.\n\n[Fuente: logistica_fletes_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-007 ingresado por canal whatsapp",
+        "09:32:19 | cargar_cliente     | Agro Servicios Pampa S.A. | Cat. B | Estado: activo | Mora: 0 d | Crédito disp.: $2.860.000,00",
+        "09:32:23 | clasificar         | consulta (confianza 0.95) - El cliente consulta sobre las políticas de logística y límites de envío para mercadería clasificada como carga peligrosa/inflamable.",
+        "09:32:40 | responder_consulta | RAG NO encontrada en políticas | 1 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "logistica_fletes_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-008",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimados, no les corresponde la aplicación de percepción de Ingresos Brutos. De acuerdo con nuestras políticas comerciales, los clientes inscriptos en la provincia de Córdoba no sufren percepciones por este concepto (estas aplican únicamente a clientes con domicilio fiscal fuera de Córdoba o sujetos no inscriptos en la provincia). Les recomendamos comunicarse con nuestro equipo de administración para revisar el comprobante y regularizar la situación.\n\n[Fuente: condiciones_comerciales_2026.pdf, pág. 2]",
+      "log": [
+        "Mensaje MSG-008 ingresado por canal email",
+        "09:32:42 | cargar_cliente     | Ferreteria El Tornillo Feliz S.R.L. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $3.220.000,00",
+        "09:32:46 | clasificar         | consulta (confianza 0.98) - El cliente consulta sobre la aplicación de percepciones impositivas (Ingresos Brutos) según las políticas comerciales y fiscales de la empresa, mencionando un remito previo solo como referencia.",
+        "09:32:53 | responder_consulta | RAG respondida con citas | 1 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "condiciones_comerciales_2026.pdf"
+      ]
+    },
+    {
+      "id": "MSG-009",
+      "esperada": "confirmar_pedido",
+      "obtenida": "confirmar_pedido",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimados de Ferretería El Tornillo Feliz S.R.L., confirmamos el registro de su pedido PED-2026-2801:\n• 200 x Disco de corte metal 115 x 1,0 mm (AB-1020)\n• 50 x Disco de desbaste 115 x 6,0 mm (AB-1120)\n• 10 x Cinta métrica 5 m x 25 mm (ME-6030)\nNeto de mercadería: $927.940,00 (descuento comercial aplicado: 17%)\nFlete: $68.000,00 + IVA | Total con IVA: $1.205.087,40\nPlazo estimado de entrega en Villa María: 3 a 4 días hábiles.\nSaludos cordiales.",
+      "log": [
+        "Mensaje MSG-009 ingresado por canal whatsapp",
+        "09:32:55 | cargar_cliente     | Ferreteria El Tornillo Feliz S.R.L. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $3.220.000,00",
+        "09:32:57 | clasificar         | pedido (confianza 0.99) - El cliente solicita formalmente mercadería detallando códigos de producto y cantidades precisas con destino de entrega indicado.",
+        "09:33:02 | extraer_pedido     | 3 ítems extraídos (AB-1020 x200, AB-1120 x50, ME-6030 x10) | destino: Villa Maria",
+        "09:33:02 | validar_pedido     | Neto: $927.940,00 | Desc: 17% | 0 alertas comerciales -> Sugiere: confirmar_pedido",
+        "09:33:17 | confirmar_pedido   | PED-2026-2801 emitido | Total: $1.205.087,40 | Guardado en MSG-009.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "AB-1020",
+          "cantidad": 200
+        },
+        {
+          "sku": "AB-1120",
+          "cantidad": 50
+        },
+        {
+          "sku": "ME-6030",
+          "cantidad": 10
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "AB-1020",
+          "descripcion": "discos de corte",
+          "cantidad": 200,
+          "aclaracion": ""
+        },
+        {
+          "sku": "AB-1120",
+          "descripcion": "discos de desbaste",
+          "cantidad": 50,
+          "aclaracion": ""
+        },
+        {
+          "sku": "ME-6030",
+          "descripcion": "cintas metricas",
+          "cantidad": 10,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-010",
+      "esperada": "confirmar_pedido",
+      "obtenida": "confirmar_pedido",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimados de Talleres Patagonia S.A., confirmamos el ingreso de su pedido **PED-2026-8415**.\nDetalle: 4 amoladoras angulares (HE-4110), 2 soldadoras inverter (HE-4500), 30 cascos de seguridad (SE-5010) y 100 pares de guantes anticorte (SE-5055).\nNeto de mercadería: $3.316.200,00 | Descuento comercial aplicado: 20% | Flete: Bonificado al 100%.\nTotal con IVA: $4.012.602,00 (imputado a su cuenta corriente).\nPlazo estimado de entrega: 8 a 12 días hábiles.\nSaludos cordiales, Mesa de Pedidos - Ferretería Industrial Andina S.R.L.",
+      "log": [
+        "Mensaje MSG-010 ingresado por canal email",
+        "09:33:19 | cargar_cliente     | Talleres Patagonia S.A. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $5.020.000,00",
+        "09:33:22 | clasificar         | pedido (confianza 0.99) - El cliente solicita formalmente mercadería con productos y cantidades bien especificadas mediante códigos y descripción, indicando además la condición de pago a cuenta corriente.",
+        "09:33:26 | extraer_pedido     | 4 ítems extraídos (HE-4110 x4, HE-4500 x2, SE-5010 x30, SE-5055 x100)",
+        "09:33:26 | validar_pedido     | Neto: $3.316.200,00 | Desc: 20% | 0 alertas comerciales -> Sugiere: confirmar_pedido",
+        "09:33:37 | confirmar_pedido   | PED-2026-8415 emitido | Total: $4.012.602,00 | Guardado en MSG-010.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "HE-4110",
+          "cantidad": 4
+        },
+        {
+          "sku": "HE-4500",
+          "cantidad": 2
+        },
+        {
+          "sku": "SE-5010",
+          "cantidad": 30
+        },
+        {
+          "sku": "SE-5055",
+          "cantidad": 100
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "HE-4110",
+          "descripcion": "amoladoras",
+          "cantidad": 4,
+          "aclaracion": ""
+        },
+        {
+          "sku": "HE-4500",
+          "descripcion": "soldadoras",
+          "cantidad": 2,
+          "aclaracion": ""
+        },
+        {
+          "sku": "SE-5010",
+          "descripcion": "cascos",
+          "cantidad": 30,
+          "aclaracion": ""
+        },
+        {
+          "sku": "SE-5055",
+          "descripcion": "pares de guantes anticorte",
+          "cantidad": 100,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-011",
+      "esperada": "confirmar_pedido",
+      "obtenida": "confirmar_pedido",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimado Marcelo, confirmamos el registro de tu pedido N° PED-2026-1404:\n\n- 20 x Antiparra policarbonato incolora (SE-5025)\n- 15 x Cinta metrica 5 m x 25 mm (ME-6030)\nNeto de mercadería: $313.310,00 (descuento comercial aplicado: 5%).\nFlete: $95.000,00 + IVA.\nTotal con IVA: $494.055,10.\nPlazo estimado de entrega: 4 a 6 días hábiles. Quedamos a la espera del comprobante de transferencia para programar el despacho.\n\nSaludos cordiales, Mesa de Pedidos.",
+      "log": [
+        "Mensaje MSG-011 ingresado por canal whatsapp",
+        "09:33:39 | cargar_cliente     | Marcelo Paz Ferreteria | Cat. C | Estado: activo | Mora: 0 d | Crédito disp.: $700.000,00",
+        "09:33:42 | clasificar         | pedido (confianza 0.98) - El cliente solicita formalmente mercadería indicando códigos de producto específicos y cantidades concretas, además de precisar la forma de pago.",
+        "09:33:46 | extraer_pedido     | 2 ítems extraídos (SE-5025 x20, ME-6030 x15) | pago anticipado",
+        "09:33:46 | validar_pedido     | Neto: $313.310,00 | Desc: 5% | 0 alertas comerciales -> Sugiere: confirmar_pedido",
+        "09:33:56 | confirmar_pedido   | PED-2026-1404 emitido | Total: $494.055,10 | Guardado en MSG-011.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "SE-5025",
+          "cantidad": 20
+        },
+        {
+          "sku": "ME-6030",
+          "cantidad": 15
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "SE-5025",
+          "descripcion": "SE-5025",
+          "cantidad": 20,
+          "aclaracion": ""
+        },
+        {
+          "sku": "ME-6030",
+          "descripcion": "ME-6030",
+          "cantidad": 15,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-012",
+      "esperada": "confirmar_pedido",
+      "obtenida": "confirmar_pedido",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimados de Agro Servicios Pampa S.A., confirmamos el ingreso de su pedido **PED-2026-4363**:\n• 6 x Aceite hidraulico ISO 68 x 20 L (LU-8010)\n• 10 x Grasa litio EP2 x 1 kg (LU-8090)\n• 2 x Juego de brocas HSS 19 piezas (FI-7075)\nNeto de mercadería: $1.055.310,00 (descuento comercial aplicado: 13%).\nFlete: $95.000,00 + IVA | **Total con IVA: $1.391.875,10**.\nPlazo estimado de entrega: 4 a 6 días hábiles. Saludos cordiales.",
+      "log": [
+        "Mensaje MSG-012 ingresado por canal email",
+        "09:33:58 | cargar_cliente     | Agro Servicios Pampa S.A. | Cat. B | Estado: activo | Mora: 0 d | Crédito disp.: $2.860.000,00",
+        "09:34:02 | clasificar         | pedido (confianza 1.00) - El cliente formaliza una orden de compra con cantidades concretas y códigos específicos de producto, indicando además el destino de entrega.",
+        "09:34:07 | extraer_pedido     | 3 ítems extraídos (LU-8010 x6, LU-8090 x10, FI-7075 x2) | destino: Santa Rosa",
+        "09:34:07 | validar_pedido     | Neto: $1.055.310,00 | Desc: 13% | 0 alertas comerciales -> Sugiere: confirmar_pedido",
+        "09:34:19 | confirmar_pedido   | PED-2026-4363 emitido | Total: $1.391.875,10 | Guardado en MSG-012.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "LU-8010",
+          "cantidad": 6
+        },
+        {
+          "sku": "LU-8090",
+          "cantidad": 10
+        },
+        {
+          "sku": "FI-7075",
+          "cantidad": 2
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "LU-8010",
+          "descripcion": "aceite hidraulico",
+          "cantidad": 6,
+          "aclaracion": "bidones"
+        },
+        {
+          "sku": "LU-8090",
+          "descripcion": "grasa",
+          "cantidad": 10,
+          "aclaracion": "potes"
+        },
+        {
+          "sku": "FI-7075",
+          "descripcion": "brocas",
+          "cantidad": 2,
+          "aclaracion": "juegos"
+        }
+      ]
+    },
+    {
+      "id": "MSG-013",
+      "esperada": "aprobacion_humana",
+      "obtenida": "aprobacion_humana",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimados de Metalúrgica San Jorge S.A., confirmamos el registro del pedido **PED-2026-2347**.  \nÍtems confirmados: 3 Amoladoras angulares 230 mm (HE-4180, desc. 15%), 1 Compresor 50 L 2 HP (NE-9010, desc. 20%) y 4 Pistolas de impacto 1/2\" (NE-9055, desc. 20%).  \nNeto de mercadería: $2.771.000,00 | Descuento comercial aplicado: 20%  \nFlete: Bonificado al 100% | Total con IVA: $3.352.910,00 (cargado en su cuenta corriente)  \nPlazo estimado de entrega: 3 a 4 días hábiles.  \nSaludos cordiales, Mesa de Pedidos.",
+      "log": [
+        "Mensaje MSG-013 ingresado por canal email",
+        "09:34:21 | cargar_cliente     | Metalurgica San Jorge S.A. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $1.550.000,00",
+        "09:34:23 | clasificar         | pedido (confianza 0.98) - El cliente solicita formalmente mercadería con productos claramente identificables (códigos de catálogo) y cantidades concretas, indicando además la condición de pago en cuenta corriente.",
+        "09:34:26 | extraer_pedido     | 3 ítems extraídos (HE-4180 x3, NE-9010 x1, NE-9055 x4)",
+        "09:34:26 | validar_pedido     | Neto: $2.771.000,00 | Desc: 20% | 1 alertas comerciales -> Sugiere: aprobacion_humana",
+        "09:34:26 | aprobacion_humana  | APROBAR por Gerencia Comercial - Motivo: Aprobación automática en benchmark de evaluación",
+        "09:34:38 | confirmar_pedido   | PED-2026-2347 emitido | Total: $3.352.910,00 | Autorizado por Gerencia Comercial | Guardado en MSG-013.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "HE-4180",
+          "cantidad": 3
+        },
+        {
+          "sku": "NE-9010",
+          "cantidad": 1
+        },
+        {
+          "sku": "NE-9055",
+          "cantidad": 4
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "HE-4180",
+          "descripcion": "amoladoras",
+          "cantidad": 3,
+          "aclaracion": ""
+        },
+        {
+          "sku": "NE-9010",
+          "descripcion": "compresor",
+          "cantidad": 1,
+          "aclaracion": ""
+        },
+        {
+          "sku": "NE-9055",
+          "descripcion": "pistolas de impacto",
+          "cantidad": 4,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-014",
+      "esperada": "aprobacion_humana",
+      "obtenida": "aprobacion_humana",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimados, confirmamos el ingreso de su pedido **PED-2026-1978**:\n• 2 x Morsa de banco 6 pulgadas fundicion (SU-3041)\n• 20 x Eslinga plana 2 toneladas x 3 m (SU-3150)\nNeto de mercadería: $930.900,00 (descuento comercial del 13% aplicado)\nFlete: $68.000,00 + IVA | **Total con IVA: $1.208.669,00** (imputado en cuenta corriente)\nPlazo estimado de entrega: 3 a 4 días hábiles.\nSaludos cordiales,\nMesa de Pedidos - Ferretería Industrial Andina S.R.L.",
+      "log": [
+        "Mensaje MSG-014 ingresado por canal whatsapp",
+        "09:34:40 | cargar_cliente     | Insumos del Litoral S.R.L. | Cat. B | Estado: activo | Mora: 12 d | Crédito disp.: $90.000,00",
+        "09:34:43 | clasificar         | pedido (confianza 0.99) - El cliente realiza un pedido formal con productos específicos identificados por código y cantidades concretas, indicando destino y condición de pago.",
+        "09:34:47 | extraer_pedido     | 2 ítems extraídos (SU-3041 x2, SU-3150 x20) | destino: Concordia",
+        "09:34:47 | validar_pedido     | Neto: $930.900,00 | Desc: 13% | 1 alertas comerciales -> Sugiere: aprobacion_humana",
+        "09:34:47 | aprobacion_humana  | APROBAR por Gerencia Comercial - Motivo: Aprobación automática en benchmark de evaluación",
+        "09:34:58 | confirmar_pedido   | PED-2026-1978 emitido | Total: $1.208.669,00 | Autorizado por Gerencia Comercial | Guardado en MSG-014.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "SU-3041",
+          "cantidad": 2
+        },
+        {
+          "sku": "SU-3150",
+          "cantidad": 20
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "SU-3041",
+          "descripcion": "morsas",
+          "cantidad": 2,
+          "aclaracion": ""
+        },
+        {
+          "sku": "SU-3150",
+          "descripcion": "eslingas",
+          "cantidad": 20,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-015",
+      "esperada": "aprobacion_humana",
+      "obtenida": "aprobacion_humana",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimados de Construcciones Del Valle S.R.L., buen día.\nConfirmamos el ingreso de su pedido **PED-2026-5611** con el siguiente detalle:\n• 5 x Nivel laser autonivelante 2 lineas (ME-6080)\n• 8 x Sierra circular 184 mm 1400 W (HE-4410)\nNeto de mercadería: $5.018.200,00 | Descuento comercial aplicado: 16% | Flete: Bonificado al 100%\nTotal con IVA: $6.072.022,00 (en cuenta corriente a 30 días).\nPlazo estimado de entrega: 4 a 6 días hábiles.\nQuedamos a su disposición.",
+      "log": [
+        "Mensaje MSG-015 ingresado por canal email",
+        "09:35:00 | cargar_cliente     | Construcciones Del Valle S.R.L. | Cat. B | Estado: activo | Mora: 38 d | Crédito disp.: $110.000,00",
+        "09:35:03 | clasificar         | pedido (confianza 0.98) - El cliente solicita formalmente productos específicos identificables con sus códigos y cantidades concretas, indicando su condición habitual de pago.",
+        "09:35:08 | extraer_pedido     | 2 ítems extraídos (ME-6080 x5, HE-4410 x8)",
+        "09:35:08 | validar_pedido     | Neto: $5.018.200,00 | Desc: 16% | 2 alertas comerciales -> Sugiere: aprobacion_humana",
+        "09:35:08 | aprobacion_humana  | APROBAR por Gerencia Comercial - Motivo: Aprobación automática en benchmark de evaluación",
+        "09:35:19 | confirmar_pedido   | PED-2026-5611 emitido | Total: $6.072.022,00 | Autorizado por Gerencia Comercial | Guardado en MSG-015.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "ME-6080",
+          "cantidad": 5
+        },
+        {
+          "sku": "HE-4410",
+          "cantidad": 8
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "ME-6080",
+          "descripcion": "niveles laser",
+          "cantidad": 5,
+          "aclaracion": ""
+        },
+        {
+          "sku": "HE-4410",
+          "descripcion": "sierras circulares",
+          "cantidad": 8,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-016",
+      "esperada": "aprobacion_humana",
+      "obtenida": "aprobacion_humana",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimados de Distribuidora Cuyo Insumos S.A., confirmamos el ingreso de su pedido **PED-2026-6940**.\n\n**Detalle confirmado:**\n- 500 x Disco de corte metal 180 x 1,6 mm (AB-1035) [Desc. 20%]\n- 300 x Disco de desbaste 115 x 6,0 mm (AB-1120) [Desc. 20%]\n- 60 x Amoladora angular 115 mm 900 W (HE-4110) [Desc. 15%, tope por marca]\n\n**Condiciones comerciales:**\n- Neto de mercadería: $18.731.000,00 | Descuento comercial aplicado: 20%\n- Flete: Bonificado al 100% | **Total con IVA: $22.664.510,00**\n- Plazo estimado de entrega: 4 a 6 días hábiles.\n\nSaludos cordiales,  \nMesa de Pedidos",
+      "log": [
+        "Mensaje MSG-016 ingresado por canal whatsapp",
+        "09:35:21 | cargar_cliente     | Distribuidora Cuyo Insumos S.A. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $2.300.000,00",
+        "09:35:29 | clasificar         | pedido (confianza 0.95) - El cliente solicita formalmente mercadería especificando códigos de producto y cantidades exactas (500 AB-1035, 300 AB-1120 y 60 HE-4110), adjuntando una solicitud de condición comercial especial por volumen/licitación.",
+        "09:35:33 | extraer_pedido     | 3 ítems extraídos (AB-1035 x500, AB-1120 x300, HE-4110 x60) | solicita 25% desc.",
+        "09:35:33 | validar_pedido     | Neto: $18.731.000,00 | Desc: 20% | 3 alertas comerciales -> Sugiere: aprobacion_humana",
+        "09:35:33 | aprobacion_humana  | APROBAR por Gerencia Comercial - Motivo: Aprobación automática en benchmark de evaluación",
+        "09:35:48 | confirmar_pedido   | PED-2026-6940 emitido | Total: $22.664.510,00 | Autorizado por Gerencia Comercial | Guardado en MSG-016.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "AB-1035",
+          "cantidad": 500
+        },
+        {
+          "sku": "AB-1120",
+          "cantidad": 300
+        },
+        {
+          "sku": "HE-4110",
+          "cantidad": 60
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "AB-1035",
+          "descripcion": "discos",
+          "cantidad": 500,
+          "aclaracion": ""
+        },
+        {
+          "sku": "AB-1120",
+          "descripcion": "discos",
+          "cantidad": 300,
+          "aclaracion": ""
+        },
+        {
+          "sku": "HE-4110",
+          "descripcion": "amoladoras",
+          "cantidad": 60,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-017",
+      "esperada": "rechazar_pedido",
+      "obtenida": "rechazar_pedido",
+      "ruta_ok": true,
+      "intencion_esperada": "pedido",
+      "intencion_obtenida": "pedido",
+      "intencion_ok": true,
+      "respuesta": "Estimado equipo de Industrias Norte Grande:\n\nAgradecemos su contacto y nos alegra su intención de retomar el trabajo en conjunto.\nLamentablemente, al registrar un saldo pendiente con 95 días de mora, la cuenta corriente se encuentra suspendida para operaciones a plazo (Art. 7).\nPara no demorar la provisión de los arneses y criquets, con gusto podemos procesar y despachar el pedido mediante pago anticipado por transferencia bancaria.\nQuedamos a su entera disposición para acercarles los datos de facturación o asesorarlos en la regularización de su cuenta.\n\nSaludos cordiales,  \nMesa de Pedidos – Ferretería Industrial Andina S.R.L.",
+      "log": [
+        "Mensaje MSG-017 ingresado por canal email",
+        "09:35:50 | cargar_cliente     | Industrias Norte Grande S.R.L. | Cat. B | Estado: suspendido | Mora: 95 d | Crédito disp.: $1.650.000,00",
+        "09:35:53 | clasificar         | pedido (confianza 0.98) - El cliente solicita formalmente mercadería especificando productos identificables (arneses SE-5090 y criquets SU-3200) con cantidades concretas y condición de pago.",
+        "09:35:56 | extraer_pedido     | 2 ítems extraídos (SE-5090 x10, SU-3200 x20)",
+        "09:35:56 | validar_pedido     | Neto: $2.121.060,00 | Desc: 13% | 2 alertas comerciales -> Sugiere: rechazar_pedido",
+        "09:36:05 | rechazar_pedido    | Rechazado: Cliente en estado 'suspendido' con 95 días de mora: no se otorgan pedidos en cuenta corriente, solo  | Guardado en MSG-017.json"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "items_esperados": [
+        {
+          "sku": "SE-5090",
+          "cantidad": 10
+        },
+        {
+          "sku": "SU-3200",
+          "cantidad": 20
+        }
+      ],
+      "items_obtenidos": [
+        {
+          "sku": "SE-5090",
+          "descripcion": "arneses",
+          "cantidad": 10,
+          "aclaracion": ""
+        },
+        {
+          "sku": "SU-3200",
+          "descripcion": "criquets",
+          "cantidad": 20,
+          "aclaracion": ""
+        }
+      ]
+    },
+    {
+      "id": "MSG-018",
+      "esperada": "derivar_humano",
+      "obtenida": "derivar_humano",
+      "ruta_ok": true,
+      "intencion_esperada": "derivar",
+      "intencion_obtenida": "derivar",
+      "intencion_ok": true,
+      "respuesta": "Hola, gracias por comunicarte con Ferretería Industrial Andina S.R.L.. Tu mensaje fue derivado al sector de Reclamos y Logística para una atención personalizada. Un asesor se contactará a la brevedad. Tu número de ticket de seguimiento es TCK-2026-8040.",
+      "log": [
+        "Mensaje MSG-018 ingresado por canal email",
+        "09:36:07 | cargar_cliente     | Ferreteria El Tornillo Feliz S.R.L. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $3.220.000,00",
+        "09:36:15 | clasificar         | derivar (confianza 0.98) - El cliente reporta un faltante físico de mercadería en una entrega ya realizada (remito R-0088421) y exige una acción concreta (nota de crédito o reenvío de las 3 cajas faltantes).",
+        "09:36:15 | derivar_humano     | Ticket TCK-2026-8040 -> Reclamos y Logística (origen: clasificacion)"
+      ]
+    },
+    {
+      "id": "MSG-019",
+      "esperada": "derivar_humano",
+      "obtenida": "derivar_humano",
+      "ruta_ok": true,
+      "intencion_esperada": "derivar",
+      "intencion_obtenida": "derivar",
+      "intencion_ok": true,
+      "respuesta": "Hola Sergio, gracias por comunicarte con Ferretería Industrial Andina S.R.L.. Tu mensaje fue derivado al sector de Compras y Proveedores para una atención personalizada. Un asesor se contactará a la brevedad. Tu número de ticket de seguimiento es TCK-2026-4879.",
+      "log": [
+        "Mensaje MSG-019 ingresado por canal whatsapp",
+        "09:36:17 | cargar_cliente     | Mantenimiento Integral Litoral S.R.L. | Cat. C | Estado: activo | Mora: 0 d | Crédito disp.: $820.000,00",
+        "09:36:20 | clasificar         | derivar (confianza 0.95) - El remitente es un fabricante/proveedor que ofrece sus productos a la empresa, por lo que corresponde derivarlo al área de compras y proveedores.",
+        "09:36:20 | derivar_humano     | Ticket TCK-2026-4879 -> Compras y Proveedores (origen: clasificacion)"
+      ]
+    },
+    {
+      "id": "MSG-020",
+      "esperada": "derivar_humano",
+      "obtenida": "derivar_humano",
+      "ruta_ok": true,
+      "intencion_esperada": "derivar",
+      "intencion_obtenida": "derivar",
+      "intencion_ok": true,
+      "respuesta": "Hola Roberto, gracias por comunicarte con Ferretería Industrial Andina S.R.L.. Tu mensaje fue derivado al sector de Asesoramiento Técnico para una atención personalizada. Un asesor se contactará a la brevedad. Tu número de ticket de seguimiento es TCK-2026-5330.",
+      "log": [
+        "Mensaje MSG-020 ingresado por canal whatsapp",
+        "09:36:22 | cargar_cliente     | Roberto Gimenez Herramientas | Cat. C | Estado: activo | Mora: 0 d | Crédito disp.: $590.000,00",
+        "09:36:25 | clasificar         | derivar (confianza 0.95) - El cliente solicita asesoramiento técnico y contacto telefónico sin especificar un producto puntual ni cantidades para un pedido, por lo que corresponde derivarlo al equipo técnico.",
+        "09:36:25 | derivar_humano     | Ticket TCK-2026-5330 -> Asesoramiento Técnico (origen: clasificacion)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "fecha": "2026-10-21T09:20:32",
+  "modelo_llm": "gemini-3.8-flash",
+  "modelo_embeddings": "models/gemini-embedding-001",
+  "retriever": "denso",
+  "pesos_hibrido": null,
+  "chunking": "articulos",
+  "chunk_size": 900,
+  "k_recuperacion": 4,
+  "resumen": {
+    "total_casos": 1,
+    "ruteo": "1/1 (100.0%)",
+    "ruteo_pct": 100.0,
+    "dato_clave": "1/1 (100.0%)",
+    "dato_clave_pct": 100.0,
+    "intencion": "1/1 (100.0%)",
+    "documento_citado": "1/1 (100.0%)",
+    "items_precision": null,
+    "items_recall": null
+  },
+  "casos": [
+    {
+      "id": "MSG-004",
+      "esperada": "responder_consulta",
+      "obtenida": "responder_consulta",
+      "ruta_ok": true,
+      "intencion_esperada": "consulta",
+      "intencion_obtenida": "consulta",
+      "intencion_ok": true,
+      "respuesta": "Estimados, les informamos que el atornillador de impacto SKU HE-4330 no incluye batería ni cargador, ya que se comercializa la herramienta sola. El código de la batería de litio compatible (18 V, 4,0 Ah) es el SKU HE-4335. Quedamos a su disposición ante cualquier otra consulta.\n\n[Fuente: fichas_tecnicas_2026.pdf, pág. 1; fichas_tecnicas_2026.pdf, pág. 1]",
+      "log": [
+        "Mensaje MSG-004 ingresado por canal email",
+        "09:20:22 | cargar_cliente     | Metalurgica San Jorge S.A. | Cat. A | Estado: activo | Mora: 0 d | Crédito disp.: $1.550.000,00",
+        "09:20:27 | clasificar         | consulta (confianza 0.98) - El cliente consulta sobre las especificaciones y accesorios incluidos de un producto del catálogo (SKU HE-4330), sin realizar un pedido de compra.",
+        "09:20:32 | responder_consulta | RAG respondida con citas | 2 citas verificadas | 4 fragmentos evaluados"
+      ],
+      "dato_ok": true,
+      "doc_ok": true,
+      "citas": [
+        "fichas_tecnicas_2026.pdf",
+        "fichas_tecnicas_2026.pdf"
+      ]
+    }
+  ]
+}
