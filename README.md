@@ -226,11 +226,27 @@ Genera el índice vectorial FAISS a partir de los 4 documentos PDF (se persiste 
 | `.\.venv\Scripts\python.exe correr.py --todos` | Procesa en lote los 20 mensajes de `bandeja.jsonl`. |
 | `.\.venv\Scripts\python.exe correr.py --grafo` | Imprime el diagrama del grafo en sintaxis Mermaid. |
 
-### 4. Evaluación contra el Golden Set (`evaluar.py`)
-Mide el rendimiento del sistema contra los 20 casos de prueba de referencia:
+### 4. Evaluación Formal contra el Golden Set (`evaluar.py`)
+Mide el rendimiento integral del sistema contra los 20 casos de prueba de referencia:
 ```powershell
 .\.venv\Scripts\python.exe evaluar.py
 ```
-El reporte evalúa:
-1. **Tasa de acierto de rama:** Porcentaje de casos que concluyen en la hoja esperada (confirmar, aprobar, rechazar o derivar).
-2. **Presencia de dato clave:** Verificación de montos, plazos y condiciones recuperadas fidedignamente por el RAG en las consultas.
+
+Resultados consolidados de la evaluación benchmark:
+```text
+==========================================================================================
+METRICAS GLOBALES DEL BENCHMARK (20 CASOS - GOLDEN SET):
+  1. Ruteo Correcto:           20/20 (100.0%)
+  2. Consultas con Dato Clave:   8/8 (100.0%)
+  3. Intencion Correcta:       20/20 (100.0%)
+  4. Documento Correcto:         8/8 (100.0%)
+  5. Extraccion de Items:      Precision: 1.000 | Recall: 1.000
+==========================================================================================
+```
+
+El reporte estructurado se persiste automáticamente en:
+* `artefactos/salidas/evaluacion.json` (reporte estructurado oficial de entrega).
+* `artefactos/salidas/evaluacion_hibrido.json` (versión con detalle técnico del retriever).
+
+Para un análisis detallado de la arquitectura, decisiones de diseño, casos de estudio y justificación teórica, consultar el **Informe Final de Entrega** en:
+👉 [docs/INFORME_FINAL.md](docs/INFORME_FINAL.md)

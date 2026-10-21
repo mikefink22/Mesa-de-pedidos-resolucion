@@ -466,7 +466,12 @@ Este es el punto más delicado y crítico:
   - Persistencia transaccional durable en SQLite sobre `artefactos/checkpoints.sqlite` resistente a cierres de terminal.
   - Script interactivo de consola `correr.py` con soporte para banderas `--mensaje`, `--pendientes`, `--decision`, `--reiniciar`, `--todos` y `--grafo`.
   - Suite de pruebas `tests/test_ejecucion.py` validando la plomería de interrupción, durabilidad y reanudación con grafos sintéticos.
-- [ ] **Fase 6: Evaluación contra Golden Set**
+- [x] **Fase 6: Evaluación contra Golden Set:**
+  - Script `evaluar.py` con benchmark por lotes de los 20 casos contra `datos/golden_set.json`.
+  - Detección precisa de interrupciones (`hubo_interrupt`) previo a reanudar para registrar ruteo a aprobación humana.
+  - Métricas de ruteo, dato clave, intención, documento citado y precisión/recall en ítems de pedidos.
+  - Throttling configurable (`--pausa`) para protección de límites de tasa (RPM) de Google Gemini.
+  - Reporte comparativo en consola y persistencia en `artefactos/salidas/evaluacion.json`.
 
 ---
 
