@@ -21,8 +21,8 @@ load_dotenv(RAIZ / ".env")
 # 1. Configuración de Modelos (Google Gemini - Stack Oficial)
 # ---------------------------------------------------------------------------
 PROVEEDOR = "google"
-MODELO_LLM = "gemini-1.5-flash"
-MODELO_EMBEDDINGS = "models/text-embedding-004"
+MODELO_LLM = "gemini-3.8-flash"
+MODELO_EMBEDDINGS = "models/gemini-embedding-001"
 TEMPERATURA = 0.0
 
 # Nombres de variables de entorno aceptadas para Google Gemini

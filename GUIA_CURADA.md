@@ -124,13 +124,14 @@ El archivo implementa las tres etapas fundamentales:
 3. **Control de Densidad Semántica:**
    - Todos los chunks se ubican entre 150 y 808 caracteres, rango óptimo para evitar tanto la pérdida de contexto (chunks microscópicos) como la dilución de la señal vectorial (chunks kilométricos).
 
-### 💡 Gestión de Cuotas en Google AI Studio (Free Tier)
-En la consola de Google AI Studio, los nombres comerciales se corresponden con la API de la siguiente manera:
-- **`Gemini Embedding 1` / `2`** = `models/text-embedding-004`. Tiene un límite gratuito de **100 RPM** y **1.000 RPD** (Requests Per Day). Como nuestro corpus tiene 59 chunks, indexar consume menos del 6% del límite diario.
-- **Modelos Flash (Texto)** = `gemini-1.5-flash` (15 RPM, 1.500 RPD).
-- Para respetar estos límites sin costo, el pipeline incorpora:
-  1. `manifiesto.json`: indexa una sola vez y no vuelve a llamar a la API si los archivos no cambiaron.
-  2. Pausa de cortesía (rate-limiting) en la evaluación masiva del Golden Set.
+### 💡 Gestión de Cuotas en Google AI Studio (Free Tier vs. Paga)
+Para chequear los límites en tiempo real de tu cuenta:
+👉 [Panel de Rate Limits en Google AI Studio](https://aistudio.google.com/app/rate-limit)
+
+1. **Embeddings:** El modelo activo es **`models/gemini-embedding-001`** (en dashboard: *Gemini Embedding 1 / 2*), con **100 RPM** y **1.000 RPD** en la capa gratuita. Cubre holgadamente los 59 chunks del índice en una sola corrida.
+2. **LLM para Cuenta Paga:** `gemini-3.8-flash` (sin límites diarios).
+3. **LLM para Cuenta Gratuita:** Seleccionar en `config.py` un modelo con alto cupo diario como `gemini-3.1-flash-lite` (500 RPD y 15 RPM). Evitar usar modelos con tope de 20 RPD (como el 3.8 en free tier) porque no alcanzan a procesar los 20 casos de prueba del Golden Set.
+4. **Herramienta de diagnóstico:** Ejecutar `py -m mesa_pedidos.ver_modelos` para inspeccionar los modelos disponibles de cualquier API key.
 
 ---
 
@@ -154,7 +155,14 @@ A partir de la exploración del código y de las pruebas del sistema de referenc
   - Estructura de carpetas `datos/`, `mesa_pedidos/`, `artefactos/` creada.
   - Archivos movidos a `datos/`.
   - Creación de `.venv` y preparación de dependencias.
-- [ ] **Fase 1: RAG y Búsqueda sobre Políticas (En progreso)**
+- [x] **Fase 1 - Paso A (Indexación RAG completada):**
+  - Módulo `mesa_pedidos/datos.py` con normalización de caracteres y carga de CSVs.
+  - Módulo `mesa_pedidos/indexar.py` con chunking semántico por artículo/SKU.
+  - 59 vectores generados e indexados con éxito en `artefactos/indice_faiss/`.
+  - Script de diagnóstico `mesa_pedidos/ver_modelos.py` documentado.
+- [ ] **Fase 1 - Paso B (Recuperación y Citas - Próximo paso):**
+  - Retriever híbrido (BM25 + FAISS denso con MMR).
+  - Generación de respuestas con LLM citando documento y página exactos.
 - [ ] **Fase 2: Tools y Lógica Comercial en Python**
 - [ ] **Fase 3: Estado, Esquemas Pydantic y Nodos**
 - [ ] **Fase 4: Grafo y Routers Condicionales**

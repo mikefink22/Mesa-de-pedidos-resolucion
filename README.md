@@ -83,19 +83,22 @@ El flujo cuenta con 9 nodos, 3 routers condicionales y 5 hojas:
    ```
    *(Nota de seguridad: el archivo `.env` está estrictamente ignorado en `.gitignore` para no filtrar credenciales).*
 
-### 💡 Guía para Cuota Gratuita de Google AI Studio (Free Tier)
+### 💡 Guía de Modelos y Cuotas en Google AI Studio (Free Tier vs. Paga)
 
-No es necesario contar con una cuenta de pago de Google Cloud; el proyecto funciona completamente dentro de los límites de la **capa gratuita (Free Tier)** de Google AI Studio:
+Google actualiza frecuentemente las cuotas diarias y los nombres de los modelos en su API. Para verificar exactamente cuántas peticiones tenés disponibles en tu proyecto:
 
-| Tarea | Modelo de API | Equivalente en Dashboard | Límites Capa Gratuita |
-|---|---|---|---|
-| **Embeddings (RAG)** | `models/text-embedding-004` | `Gemini Embedding 1` / `2` | **100 RPM** · 30K TPM · **1.000 RPD** |
-| **LLM Principal** | `gemini-1.5-flash` | Modelos de texto Flash | **15 RPM** · 1M TPM · **1.500 RPD** |
-| **Alternativa económica** | `gemini-1.5-flash-8b` | Flash Lite | **15 RPM** · 250K TPM · **500 RPD** |
+👉 **Consultar cuotas en tu cuenta:** [Panel de Rate Limits en Google AI Studio](https://aistudio.google.com/app/rate-limit)
 
-**Consejos para no agotar la cuota gratuita:**
-- **Indexación:** Indexar los 4 PDFs solo consume 59 fragmentos en un solo lote (menos del 6% del límite diario de 1.000 RPD). Gracias al `manifiesto.json`, solo se ejecuta una sola vez.
-- **Evaluación en lote (`evaluar.py`):** Como la cuota gratuita de texto tiene un límite de 15 peticiones por minuto (RPM), el script de evaluación debe incluir una pausa de 2 a 3 segundos entre mensajes para no recibir errores `429 ResourceExhausted`.
+| Tarea | Modelo API | Equivalente en Dashboard | Cuenta Paga | Capa Gratuita (Free Tier) |
+|---|---|---|---|---|
+| **Embeddings (RAG)** | `models/gemini-embedding-001` | `Gemini Embedding 1` / `2` | Ilimitado | **100 RPM** · **1.000 RPD** |
+| **LLM (Cuenta Paga)** | `gemini-3.8-flash` | Gemini 3.8 Flash | Ilimitado | *(Limitado a 20 RPD)* |
+| **LLM (Capa Gratuita)** | `gemini-3.1-flash-lite` / `gemini-3.5-flash-lite` | Flash Lite | Ilimitado | **15 RPM** · **500 RPD** (ideal para pruebas) |
+
+**Recomendaciones para configurar según tu tipo de cuenta:**
+- **Cuenta Paga (Pay-as-you-go):** Usar `gemini-3.8-flash` y `models/gemini-embedding-001` en `config.py`.
+- **Cuenta Gratuita (Free Tier):** Elegir en `config.py` un modelo de texto con alto cupo diario (500 RPD como `gemini-3.1-flash-lite`), ya que modelos como 3.8 Flash tienen un tope de 20 consultas por día y se agotan antes de terminar los 20 casos de prueba.
+- **Herramienta de diagnóstico:** Ejecutá `py -m mesa_pedidos.ver_modelos` en cualquier momento para ver la lista exacta de modelos activos con tu clave.
 
 ---
 
