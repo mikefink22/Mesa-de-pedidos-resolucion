@@ -19,80 +19,61 @@ El sistema automatiza el procesamiento de mensajes que ingresan por WhatsApp o c
 
 ## 🏛️ 2. Arquitectura del Grafo (LangGraph)
 
-El flujo cuenta con 9 nodos, 3 routers condicionales y 5 hojas:
-
-### Diagrama Visual Interactivo (Mermaid)
+El flujo cuenta con 9 nodos, 3 routers condicionales y 5 hojas. Las flechas punteadas son aristas condicionales (su destino se conoce recién cuando se ejecuta):
 
 ```mermaid
----
-config:
-  flowchart:
-    curve: linear
----
-graph TD;
-	__start__([<p>__start__</p>]):::first
-	cargar_cliente(cargar_cliente)
-	clasificar(clasificar)
-	responder_consulta(responder_consulta)
-	extraer_pedido(extraer_pedido)
-	validar_pedido(validar_pedido)
-	aprobacion_humana(aprobacion_humana)
-	confirmar_pedido(confirmar_pedido)
-	rechazar_pedido(rechazar_pedido)
-	derivar_humano(derivar_humano)
-	__end__([<p>__end__</p>]):::last
-	__start__ --> cargar_cliente;
-	cargar_cliente --> clasificar;
-	extraer_pedido --> validar_pedido;
-	clasificar -. &nbsp;consulta&nbsp; .-> responder_consulta;
-	clasificar -. &nbsp;pedido&nbsp; .-> extraer_pedido;
-	clasificar -. &nbsp;derivar&nbsp; .-> derivar_humano;
-	validar_pedido -. &nbsp;confirmar_pedido&nbsp; .-> confirmar_pedido;
-	validar_pedido -. &nbsp;aprobacion_humana&nbsp; .-> aprobacion_humana;
-	validar_pedido -. &nbsp;rechazar_pedido&nbsp; .-> rechazar_pedido;
-	validar_pedido -. &nbsp;derivar_humano&nbsp; .-> derivar_humano;
-	aprobacion_humana -. &nbsp;confirmar&nbsp; .-> confirmar_pedido;
-	aprobacion_humana -. &nbsp;rechazar&nbsp; .-> rechazar_pedido;
-	responder_consulta --> __end__;
-	confirmar_pedido --> __end__;
-	rechazar_pedido --> __end__;
-	derivar_humano --> __end__;
-	classDef default fill:#f2f0ff,line-height:1.2
-	classDef first fill-opacity:0
-	classDef last fill:#bfb6fc
+graph TD
+	__start__([__start__]):::terminal
+	cargar_cliente(cargar_cliente):::nodo
+	clasificar(clasificar):::llm
+	responder_consulta(responder_consulta):::llm
+	extraer_pedido(extraer_pedido):::llm
+	validar_pedido(validar_pedido):::nodo
+	aprobacion_humana(aprobacion_humana):::hitl
+	confirmar_pedido(confirmar_pedido):::ok
+	rechazar_pedido(rechazar_pedido):::error
+	derivar_humano(derivar_humano):::error
+	__end__([__end__]):::terminal
+
+	__start__ --> cargar_cliente
+	cargar_cliente --> clasificar
+	clasificar -. consulta .-> responder_consulta
+	clasificar -. pedido .-> extraer_pedido
+	clasificar -. derivar .-> derivar_humano
+	extraer_pedido --> validar_pedido
+	validar_pedido -. confirmar .-> confirmar_pedido
+	validar_pedido -. aprobar .-> aprobacion_humana
+	validar_pedido -. rechazar .-> rechazar_pedido
+	validar_pedido -. derivar .-> derivar_humano
+	aprobacion_humana -. aprueba .-> confirmar_pedido
+	aprobacion_humana -. rechaza .-> rechazar_pedido
+	responder_consulta --> __end__
+	confirmar_pedido --> __end__
+	rechazar_pedido --> __end__
+	derivar_humano --> __end__
+
+	classDef default fill:#21252b,stroke:#abb2bf,stroke-width:1.5px,color:#ffffff
+	classDef terminal fill:#1e2227,stroke:#5c6370,stroke-width:2px,stroke-dasharray: 4 4,color:#e5c07b
+	classDef nodo fill:#1f2937,stroke:#38bdf8,stroke-width:2px,color:#ffffff
+	classDef llm fill:#2e1065,stroke:#c084fc,stroke-width:2px,color:#ffffff
+	classDef hitl fill:#451a03,stroke:#fb923c,stroke-width:2px,color:#ffffff
+	classDef ok fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#ffffff
+	classDef error fill:#4c0519,stroke:#f87171,stroke-width:2px,color:#ffffff
 ```
 
-### Esquema Conceptual Detallado
+**9 nodos · 3 routers · 5 hojas:**
 
-```text
-                        START
-                          │
-                   [cargar_cliente]          ← resuelve CUIT contra clientes.csv
-                          │
-                     [clasificar]            ← LLM + structured output
-                          │
-              ┌───────────┼───────────┐
-        (consulta)    (pedido)    (derivar)
-              │           │           │
-   [responder_consulta]   │   [derivar_humano]
-         ↑ RAG            │           │
-              │     [extraer_pedido]  │      ← LLM + structured output
-             END          │          END
-                   [validar_pedido]          ← Tools + reglas comerciales (Python puro)
-                          │
-        ┌────────┬────────┴────────┬──────────┐
-  (confirmar) (humano)      (rechazar)   (derivar)
-        │        │                │           │
-        │ [aprobacion_humana]     │           │
-        │    │        │           │           │
-        │ aprueba   rechaza       │           │
-        │    │        │           │           │
-   [confirmar_pedido] │           │           │
-        │             └──→ [rechazar_pedido]  │
-       END                        │    [derivar_humano]
-                                 END          │
-                                             END
-```
+| Nodo | Usa LLM | Qué hace |
+|---|---|---|
+| `cargar_cliente` | no | Resuelve el CUIT contra `clientes.csv` |
+| `clasificar` | sí | Consulta / pedido / derivar (structured output) |
+| `responder_consulta` | sí | RAG: recupera fragmentos de políticas y responde citando |
+| `extraer_pedido` | sí | Extrae ítems y cantidades del texto (structured output) |
+| `validar_pedido` | **no** | Tools + reglas en Python: precio, descuento, crédito, stock → ruta |
+| `aprobacion_humana` | no | `interrupt()`: frena y espera decisión de Gerencia |
+| `confirmar_pedido` | redacta | Registra el pedido confirmado; el LLM solo redacta el mensaje |
+| `rechazar_pedido` | redacta | Registra el rechazo; el LLM solo redacta el mensaje |
+| `derivar_humano` | no | Genera ticket de derivación para atención humana |
 
 ---
 
