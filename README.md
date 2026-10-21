@@ -66,8 +66,8 @@ graph TD
 | Nodo | Usa LLM | Qué hace |
 |---|---|---|
 | `cargar_cliente` | no | Resuelve el CUIT contra `clientes.csv` |
-| `clasificar` | sí | Consulta / pedido / derivar (structured output) |
-| `responder_consulta` | sí | RAG: recupera fragmentos de políticas y responde citando |
+| `clasificar` | sí | Consulta / pedido / derivar (structured output con Pydantic) |
+| `responder_consulta` | sí | RAG: recupera fragmentos de políticas y responde citando fuente |
 | `extraer_pedido` | sí | Extrae ítems y cantidades del texto (structured output) |
 | `validar_pedido` | **no** | Tools + reglas en Python: precio, descuento, crédito, stock → ruta |
 | `aprobacion_humana` | no | `interrupt()`: frena y espera decisión de Gerencia |
@@ -80,7 +80,7 @@ graph TD
 ## ⚙️ 3. Puesta en Marcha
 
 ### Prerrequisitos
-- Python instalado en Windows (ejecutable mediante `py`).
+- Python 3.10+ en Windows.
 - Clave de API de Google Gemini (o de OpenAI opcional).
 
 ### Instalación paso a paso
@@ -88,12 +88,12 @@ graph TD
 1. **Crear y activar el entorno virtual:**
    ```powershell
    py -m venv .venv
-   .\.venv\Scripts\activate
+   .\.venv\Scripts\Activate.ps1
    ```
 
 2. **Instalar dependencias:**
    ```powershell
-   pip install -r requirements.txt
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
    ```
 
 3. **Configurar variables de entorno:**
@@ -107,7 +107,9 @@ graph TD
    ```
    *(Nota de seguridad: el archivo `.env` está estrictamente ignorado en `.gitignore` para no filtrar credenciales).*
 
-### 💡 Guía de Modelos y Cuotas en Google AI Studio (Free Tier vs. Paga)
+---
+
+### 💡 Gestión de Cuotas y Modelos en Google AI Studio (Free Tier vs. Paga)
 
 Google actualiza frecuentemente las cuotas diarias y los nombres de los modelos en su API. Para verificar exactamente cuántas peticiones tenés disponibles en tu proyecto:
 
@@ -117,12 +119,12 @@ Google actualiza frecuentemente las cuotas diarias y los nombres de los modelos 
 |---|---|---|---|---|
 | **Embeddings (RAG)** | `models/gemini-embedding-001` | `Gemini Embedding 1` / `2` | Ilimitado | **100 RPM** · **1.000 RPD** |
 | **LLM (Cuenta Paga)** | `gemini-3.8-flash` | Gemini 3.8 Flash | Ilimitado | *(Limitado a 20 RPD)* |
-| **LLM (Capa Gratuita)** | `gemini-3.1-flash-lite` / `gemini-3.5-flash-lite` | Flash Lite | Ilimitado | **15 RPM** · **500 RPD** (ideal para pruebas) |
+| **LLM (Capa Gratuita)** | `gemini-3.1-flash-lite` | Flash Lite | Ilimitado | **15 RPM** · **500 RPD** (recomendado para tests) |
 
 **Recomendaciones para configurar según tu tipo de cuenta:**
-- **Cuenta Paga (Pay-as-you-go):** Usar `gemini-3.8-flash` y `models/gemini-embedding-001` en `config.py`.
-- **Cuenta Gratuita (Free Tier):** Elegir en `config.py` un modelo de texto con alto cupo diario (500 RPD como `gemini-3.1-flash-lite`), ya que modelos como 3.8 Flash tienen un tope de 20 consultas por día y se agotan antes de terminar los 20 casos de prueba.
-- **Herramienta de diagnóstico:** Ejecutá `py -m mesa_pedidos.ver_modelos` en cualquier momento para ver la lista exacta de modelos activos con tu clave.
+- **Cuenta Paga (Pay-as-you-go):** Configurar `MODELO_LLM = "gemini-3.8-flash"` y `MODELO_EMBEDDINGS = "models/gemini-embedding-001"` en `config.py`.
+- **Cuenta Gratuita (Free Tier):** Elegir en `config.py` un modelo de texto con alto cupo diario como `gemini-3.1-flash-lite` (500 RPD), ya que modelos como 3.8 Flash tienen un tope de 20 consultas por día y se agotan antes de terminar los 20 casos de prueba del Golden Set.
+- **Herramienta de diagnóstico:** Ejecutá `.\.venv\Scripts\python.exe -m mesa_pedidos.ver_modelos` en cualquier momento para ver la lista exacta de modelos activos con tu clave.
 
 ---
 
@@ -130,17 +132,18 @@ Google actualiza frecuentemente las cuotas diarias y los nombres de los modelos 
 
 Todo lo relativo a modelos, rutas y reglas de negocio vive centralizado en `config.py`:
 
-- **Proveedor y Modelos:**
-  - Proveedor activo: `PROVEEDOR = "google"` (o `"openai"`).
-  - LLM: `gemini-1.5-flash` (rápido y estructurado con temperatura 0.0).
-  - Embeddings: `models/text-embedding-004`.
-- **RAG:**
-  - Estrategia de chunking: por artículos de políticas.
-  - Búsqueda: Híbrida (`rank-bm25` + denso en FAISS).
-- **Reglas de Negocio:**
-  - Pedidos mínimos: Zona A ($250.000), Zona B ($250.000), Zona C ($120.000).
-  - Topes de descuento por volumen y tope del 15% en marcas eléctricas (Dewalt, Makita, Bosch).
-  - Días de mora (>30 requiere autorización, >60 cuenta suspendida).
+- **Proveedor y Modelos Activos:**
+  - Proveedor activo: `PROVEEDOR = "google"` (respaldo disponible para `"openai"`).
+  - LLM: `gemini-3.8-flash` (cuenta paga) o `gemini-3.1-flash-lite` (cuenta gratuita, 500 RPD), con `temperatura: 0.0`.
+  - Embeddings: `models/gemini-embedding-001` (100 RPM / 1.000 RPD).
+- **RAG de Políticas:**
+  - Estrategia de chunking: `articulos` (59 chunks estructurados por artículo y SKU, preservando excepciones legales).
+  - Búsqueda: Híbrida (`rank-bm25` con peso 0.4 + denso en FAISS con peso 0.6).
+- **Reglas Comerciales Determinísticas (Python puro):**
+  - Pedidos mínimos por zona: Zona A ($250.000), Zona B ($250.000), Zona C ($120.000).
+  - Escala de descuentos por volumen y tope estricto del 15% en herramientas eléctricas (Dewalt, Makita, Bosch).
+  - Bonificación financiera por pago anticipado: 3% (opera fuera del tope).
+  - Días de mora: 30 a 60 días requiere autorización gerencial; >60 días cuenta suspendida (solo habilitado con pago anticipado).
 
 ---
 
@@ -148,33 +151,86 @@ Todo lo relativo a modelos, rutas y reglas de negocio vive centralizado en `conf
 
 ```text
 Mesa de Pedidos/
-├── datos/                  # Corpus de RAG (politicas/) y CSVs de clientes/catálogo
-├── mesa_pedidos/           # Paquete Python del sistema (RAG, tools, nodos, grafo)
-├── artefactos/             # Índices FAISS y base SQLite checkpoints (ignorado en git)
-├── config.py               # Configuración centralizada y reglas de negocio
-├── correr.py               # Script de ejecución CLI y gestión de aprobaciones
-├── evaluar.py              # Evaluación del Golden Set (20 mensajes de prueba)
-├── requirements.txt        # Dependencias fijadas del proyecto
-├── .envmodelo              # Plantilla segura de variables de entorno
-├── .gitignore              # Protección estricta de secretos y cachés
-├── AGENTS.md               # Instrucciones permanentes para el asistente IA
-├── PLAN_DE_TRABAJO.md      # Plan detallado de fases del proyecto
-└── README.md               # Esta documentación
+├── datos/                          # Datos duros y corpus de negocio
+│   ├── politicas/                  # 4 PDFs corporativos (corpus del RAG: 10 páginas)
+│   ├── catalogo.csv                # 40 productos industriales con precio, IVA, stock y depósito
+│   ├── clientes.csv                # 12 clientes con CUIT, límite, saldo y mora
+│   ├── bandeja.jsonl               # 20 mensajes de entrada reales (simulación de bandeja)
+│   └── golden_set.json             # 20 casos de referencia para evaluación final
+├── mesa_pedidos/                   # Paquete Python del sistema
+│   ├── __init__.py
+│   ├── esquemas.py                 # Modelos Pydantic para Structured Output y datos duros
+│   ├── estado.py                   # TypedDict (EstadoMesa) con reducer Annotated[list[str], add]
+│   ├── tools.py                    # Tools comerciales (@tool con args_schema y tolerancia tipográfica)
+│   ├── reglas.py                   # Política comercial en Python puro (cero matemática en LLM)
+│   ├── indexar.py                  # Ingesta, chunking semántico por artículo e índice FAISS
+│   ├── recuperacion.py             # Retriever híbrido (BM25 + FAISS) y armado fidedigno de citas
+│   ├── llm.py                      # Fábrica del cliente Google Gemini con Structured Output
+│   ├── prompts.py                  # Prompts protegidos contra inyecciones y sin operaciones matemáticas
+│   ├── nodos.py                    # Implementación de los 9 nodos del grafo
+│   ├── grafo.py                    # Ensamblado del StateGraph, 3 routers condicionales y SqliteSaver
+│   └── ver_modelos.py              # Script de diagnóstico para consultar cuotas y modelos de Gemini
+├── tests/                          # Suite de pruebas unitarias determinísticas (sin consumo de API)
+│   ├── test_tools.py               # Pruebas de consultar_producto y verificar_credito
+│   ├── test_reglas.py              # Pruebas de descuentos, topes, mora, fletes y decidir_ruta
+│   ├── test_estado.py              # Validación de EstadoMesa, reducers de logs y serialización
+│   └── test_grafo.py               # Verificación de compilación, topología y routers pasamanos
+├── docs/                           # Documentación técnica y manual de estudio
+│   ├── CONSIGNA.md                 # Enunciado y requerimientos formales de la diplomatura
+│   └── GUIA_CURADA.md              # Bitácora técnica y guía pedagógica de IA Engineering
+├── artefactos/                     # Salidas generadas por el sistema (ignorado en git)
+│   ├── indice_faiss/               # Vectorstore FAISS persistido con su manifiesto
+│   ├── checkpoints.sqlite          # Base transaccional para pausar y reanudar pedidos (HITL)
+│   └── salidas/                    # Registro de pedidos confirmados, rechazados y tickets
+├── config.py                       # Configuración centralizada única (rutas, modelos, parámetros)
+├── correr.py                       # Consola CLI para procesar mensajes y gestionar aprobaciones
+├── evaluar.py                      # Evaluación automatizada contra el Golden Set (Fase 6)
+├── requirements.txt                # Dependencias fijadas del proyecto
+├── .envmodelo                      # Plantilla segura de variables de entorno
+├── .gitignore                      # Protección estricta de secretos, bases y cachés
+├── AGENTS.md                       # Reglas permanentes para el asistente IA
+├── PLAN_DE_TRABAJO.md              # Plan de trabajo estructurado por fases
+└── README.md                       # Documentación principal del proyecto
 ```
 
 ---
 
-## 🧪 6. Ejecución y Métricas
+## 🧪 6. Ejecución, Pruebas y Métricas
 
-Una vez implementado, el sistema se opera mediante:
+Todas las ejecuciones deben realizarse con el entorno virtual activo:
 
-* **Indexar políticas:** `py -m mesa_pedidos.indexar`
-* **Procesar un mensaje individual:** `py correr.py --mensaje MSG-009`
-* **Reanudar pedido en espera de aprobación:** `py correr.py --mensaje MSG-013 --decision aprobar`
-* **Medir rendimiento contra el Golden Set (20 casos):**
-  ```powershell
-  py evaluar.py
-  ```
-  El reporte evalúa:
-  1. **Tasa de acierto de rama:** Porcentaje de casos que concluyen en la hoja esperada.
-  2. **Presencia de dato clave:** Verificación de montos, plazos y condiciones recuperadas por el RAG.
+### 1. Pruebas Unitarias (Sin costo de API)
+Verifican el 100% de la lógica determinística de negocio en milisegundos:
+```powershell
+.\.venv\Scripts\python.exe -m pytest -v
+```
+
+### 2. Indexación de Políticas (RAG)
+Genera el índice vectorial FAISS a partir de los 4 documentos PDF (se persiste en disco):
+```powershell
+.\.venv\Scripts\python.exe -m mesa_pedidos.indexar
+```
+*Para inspeccionar los 59 chunks generados sin llamar a la API:*
+```powershell
+.\.venv\Scripts\python.exe -m mesa_pedidos.indexar --ver
+```
+
+### 3. Procesamiento y Consola Interactiva (`correr.py`)
+| Comando | Qué hace |
+|---|---|
+| `.\.venv\Scripts\python.exe correr.py --mensaje MSG-009` | Procesa un pedido estándar: valida y confirma automáticamente. |
+| `.\.venv\Scripts\python.exe correr.py --mensaje MSG-013` | Pedido que supera el crédito: se frena en `interrupt()` y guarda checkpoint. |
+| `.\.venv\Scripts\python.exe correr.py --pendientes` | Lista todos los pedidos frenados esperando decisión de Gerencia. |
+| `.\.venv\Scripts\python.exe correr.py --mensaje MSG-013 --decision aprobar --razon "Autorizado"` | Reanuda el hilo en SQLite y confirma el pedido. |
+| `.\.venv\Scripts\python.exe correr.py --texto "Cuánto sale el flete a Salta?" --cuit 30-71455982-2` | Procesa una consulta informal escrita a mano. |
+| `.\.venv\Scripts\python.exe correr.py --todos` | Procesa en lote los 20 mensajes de `bandeja.jsonl`. |
+| `.\.venv\Scripts\python.exe correr.py --grafo` | Imprime el diagrama del grafo en sintaxis Mermaid. |
+
+### 4. Evaluación contra el Golden Set (`evaluar.py`)
+Mide el rendimiento del sistema contra los 20 casos de prueba de referencia:
+```powershell
+.\.venv\Scripts\python.exe evaluar.py
+```
+El reporte evalúa:
+1. **Tasa de acierto de rama:** Porcentaje de casos que concluyen en la hoja esperada (confirmar, aprobar, rechazar o derivar).
+2. **Presencia de dato clave:** Verificación de montos, plazos y condiciones recuperadas fidedignamente por el RAG en las consultas.
