@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import textwrap
 from datetime import date, datetime
 from typing import Any, Optional
 
@@ -112,8 +113,15 @@ def _mostrar_pedido_de_aprobacion(payload: dict[str, Any]) -> None:
     print(f"  APROBACION REQUERIDA - GERENCIA COMERCIAL  ({payload.get('mensaje_id', '')})")
     print("!" * ANCHO)
     print(f"  Cliente: {payload.get('razon_social', '')} (CUIT {payload.get('cuit', '')} · Cat. {payload.get('categoria', '')} · Mora {payload.get('mora_dias', 0)} dias)")
+    
+    texto_orig = (payload.get("texto_original") or "").strip()
+    if texto_orig:
+        print("\n  Mensaje original del cliente:")
+        for linea in textwrap.wrap(f"\"{texto_orig}\"", width=ANCHO - 6):
+            print(f"    {linea}")
+
     print(
-        f"  Credito: Limite {pesos(payload.get('limite_credito', 0.0))} | "
+        f"\n  Credito: Limite {pesos(payload.get('limite_credito', 0.0))} | "
         f"Saldo {pesos(payload.get('saldo_actual', 0.0))} | "
         f"Disponible {pesos(payload.get('credito_disponible', 0.0))}"
     )
@@ -219,7 +227,9 @@ def procesar(
         if previo["estado"] and reiniciar:
             ejecucion.borrar_thread(grafo, thread_id)
         print(f"\n  Procesando {mensaje.id} [{mensaje.canal.upper()} · {mensaje.remitente}]:")
-        print(f"  \"{mensaje.texto[:140]}...\"\n")
+        for linea in textwrap.wrap(f"\"{mensaje.texto}\"", width=ANCHO - 4):
+            print(f"  {linea}")
+        print()
         resultado = ejecucion.iniciar(grafo, mensaje, cfg, _al_pasar, origen="cli")
 
     while resultado.get("pendiente"):
