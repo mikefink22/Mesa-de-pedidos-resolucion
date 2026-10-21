@@ -205,6 +205,14 @@ def cargar_golden_set() -> dict[str, Any]:
     return json.loads(config.GOLDEN_SET.read_text(encoding="utf-8"))
 
 
+def caso_golden(caso_id: str) -> Optional[dict[str, Any]]:
+    """Busca un caso específico en el golden_set por su ID (ej. 'MSG-009')."""
+    for c in cargar_golden_set().get("casos", []):
+        if c.get("id", "").upper() == caso_id.upper():
+            return c
+    return None
+
+
 def cargar_catalogo() -> pd.DataFrame:
     """Compatibilidad: Retorna el catálogo como pandas DataFrame."""
     return pd.read_csv(config.CATALOGO_CSV, encoding="utf-8")

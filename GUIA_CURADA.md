@@ -224,8 +224,11 @@ A partir de la exploración del código y de las pruebas del sistema de referenc
   - Módulo `mesa_pedidos/estado.py` con `EstadoMesa` (`TypedDict`) y reducer `Annotated[list[str], add]` para acumulación de trazas en `log` y `errores`.
   - Suite de pruebas organizada en `tests/` con soporte dual (automatizado vía `pytest` y ejecución visual directa vía `py tests/test_*.py`).
   - Verificación exitosa en `StateGraph` real de LangGraph (10/10 tests pasando).
-- [ ] **Fase 2 - Paso C (Reglas Comerciales en `reglas.py`):**
-  - Descuentos por volumen, topes de marca (15%), flete y ruteo de pedidos.
+- [x] **Fase 2 - Paso C (Reglas Comerciales en `reglas.py`):**
+  - Descuentos por volumen (Art. 4), topes por marca (15% en herramientas eléctricas Dewalt/Makita/Bosch, Art. 5) y financiero (3% pago anticipado, Art. 6).
+  - Cotización de fletes por zonas 1 a 5, bonificaciones y recargo por carga peligrosa (aerosoles).
+  - Motor determinístico `decidir_ruta` con cascada de prioridades sin `if` ocultos en el grafo.
+  - Suite de pruebas `tests/test_reglas.py` con 6 tests unitarios sintéticos validados al 100%.
 - [ ] **Fase 3: Nodos y Routers Condicionales**
 - [ ] **Fase 4: Ensamblado del Grafo y SqliteSaver**
 - [ ] **Fase 5: Human-in-the-Loop y Consola CLI**
@@ -240,8 +243,9 @@ Durante el ciclo de desarrollo se implementaron utilidades de consola para verif
 | Utilidad / Script | Comando de Ejecución | Propósito Técnico |
 |---|---|---|
 | **Diagnóstico de Modelos** | `py -m mesa_pedidos.ver_modelos` | Consulta los modelos y límites de tasa (RPM / RPD) habilitados en Google AI Studio para la clave actual. |
-| **Suite Completa de Tests** | `py -m pytest tests/ -v` | Ejecuta las aserciones formales sobre el estado, reducers y herramientas comerciales. |
+| **Suite Completa de Tests** | `py -m pytest tests/ -v` | Ejecuta las aserciones formales sobre el estado, reducers, herramientas y reglas comerciales. |
 | **Prueba de Tools Comerciales** | `py tests/test_tools.py` | Ejecuta casos de prueba interactivos sobre `consultar_producto` y `verificar_credito` (exactitud, typos, ambigüedad y crédito). |
 | **Prueba de Estado LangGraph** | `py tests/test_estado.py` | Compila y ejecuta un flujo real de `StateGraph(EstadoMesa)` comprobando el reducer `add` y la serialización. |
+| **Prueba de Reglas de Negocio** | `py tests/test_reglas.py` | Valida y desglosa en pantalla la tabla de cálculo de precios, topes de marca, mora y fletes. |
 | **Inspección RAG Aislada** | `py -m mesa_pedidos.recuperacion "texto"` | Evalúa el pipeline de recuperación híbrida (BM25 + FAISS) y generación de citas verificables. |
 
