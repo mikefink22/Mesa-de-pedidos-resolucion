@@ -1,4 +1,4 @@
-# 📘 Guía Curada de Aprendizaje: Mesa de Pedidos
+# 📓 Cuaderno de Ingeniería: Mesa de Pedidos
 **Diplomatura en IA Engineering (ICARO · UNC · FCEFyN)**
 *Sistema inteligente de atención, validación comercial y ruteo con LangGraph, RAG y Human-in-the-Loop.*
 
@@ -472,6 +472,26 @@ Este es el punto más delicado y crítico:
   - Métricas de ruteo, dato clave, intención, documento citado y precisión/recall en ítems de pedidos.
   - Throttling configurable (`--pausa`) para protección de límites de tasa (RPM) de Google Gemini.
   - Reporte comparativo en consola y persistencia en `artefactos/salidas/evaluacion.json`.
+
+---
+
+## 📌 Backlog de Mejoras y Refactorizaciones Pendientes
+
+### 1. Visualización Completa del Mensaje Original en Human-in-the-Loop (UX en CLI)
+* **Archivo afectado:** [`correr.py`](file:///c:/Proyectos/Icaro/Mesa%20de%20Pedidos/correr.py) (funciones `procesar` y `_mostrar_pedido_de_aprobacion`).
+* **Diagnóstico del problema:**
+  - En la consola, la línea `print(f"  \"{mensaje.texto[:140]}...\"\n")` trunca arbitrariamente los mensajes entrantes. En el caso de MSG-016, cortó exactamente en `"...es una licitaci..."`, ocultando el argumento central de la cliente (*"que ganamos y estamos muy justos"*).
+  - Asimismo, en la ficha de aprobación gerencial (`_mostrar_pedido_de_aprobacion`), no se está imprimiendo el campo `texto_original` que ya viene empaquetado en el payload del `interrupt()`.
+* **Solución técnica planificada:**
+  - Incorporar en `_mostrar_pedido_de_aprobacion()` la impresión del mensaje íntegro formateado con `textwrap.wrap(payload.get("texto_original", ""), width=74)`.
+  - Evitar el recorte a 140 caracteres en el encabezado de procesamiento.
+* **Fundamento de IA Engineering:** En sistemas Human-in-the-Loop, el operador humano requiere tanto los datos duros (la tabla estructurada que valida stock y crédito) como el contexto blando del mensaje original (el *por qué* de la excepción) para no depender ciegamente del filtro del LLM.
+
+### 2. Atajos de Línea de Comandos en la CLI (`correr.py`)
+* **Archivo afectado:** [`correr.py`](file:///c:/Proyectos/Icaro/Mesa%20de%20Pedidos/correr.py) (parser de argumentos).
+* **Solución técnica planificada:**
+  - Permitir pasar el ID del mensaje de forma posicional: `py correr.py MSG-016`.
+  - Agregar los flags directos `--aprobar "justificación"` y `--descuento <pct>` para resolver reanudaciones del interrupt en un solo paso desde la terminal.
 
 ---
 

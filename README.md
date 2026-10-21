@@ -4,6 +4,10 @@
 
 Sistema inteligente de procesamiento y validación de pedidos para **Ferretería Industrial Andina S.R.L.** implementado con **LangGraph**, **RAG sobre políticas** y **validación determinística de reglas comerciales en Python**.
 
+> [!TIP]
+> 📓 **Cuaderno de Ingeniería:** Para una explicación pedagógica paso a paso de los conceptos de IA Engineering (RAG, LangGraph, Human-in-the-Loop, Reducers y persistencia), consultar el [Cuaderno de Ingeniería](docs/CUADERNO_DE_INGENIERIA.md).  
+> 🔬 **Caso de Estudio Destacado:** Para un análisis profundo de negociación comercial con HITL y guardrail de stock (Art. 9), consultar el [Caso de Estudio MSG-016](docs/CASO_ESTUDIO_MSG016_HITL.md).
+
 ---
 
 ## 📌 1. ¿De qué se trata el sistema?
@@ -249,5 +253,13 @@ El reporte estructurado se persiste automáticamente en:
 * `artefactos/salidas/evaluacion.json` (reporte estructurado oficial de entrega).
 * `artefactos/salidas/evaluacion_hibrido.json` (versión con detalle técnico del retriever).
 
-Para un análisis detallado de la arquitectura, decisiones de diseño, casos de estudio y justificación teórica, consultar el **Informe Final de Entrega** en:
-👉 [docs/INFORME_FINAL.pdf](docs/INFORME_FINAL.pdf)
+---
+
+## 📚 7. Documentación Complementaria y Casos de Estudio
+
+* 🔬 **[Caso de Estudio Técnico: Negociación HITL, Guardrail de Stock (Art. 9) y Ciclo de Reclamos (MSG-016)](docs/CASO_ESTUDIO_MSG016_HITL.md)**:  
+  Análisis técnico profundo sobre el caso MSG-016: negociación de excepciones comerciales, implementación del guardrail en Python para entrega parcial y prevención de facturación de mercadería sin stock, y derivación automática de reclamos con tickets auditables.
+* 📓 **[Cuaderno de Ingeniería y Bitácora de Arquitectura](docs/CUADERNO_DE_INGENIERIA.md)**:  
+  Manual de estudio y bitácora técnica de IA Engineering. Cubre teoría, conceptos pedagógicos (RAG denso/BM25, LangChain `@tool`, StateGraph, reducers de auditoría, Human-in-the-Loop duradero con SqliteSaver), matriz de decisiones de diseño y backlog evolutivo.
+* 📄 **[Informe Final de Entrega (PDF)](docs/INFORME_FINAL.pdf)**:  
+  Documento académico formal consolidado para la presentación y evaluación del proyecto.

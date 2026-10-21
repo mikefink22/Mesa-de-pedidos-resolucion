@@ -426,9 +426,27 @@ def _aplicar_edicion_humana(state: dict[str, Any], decision: DecisionHumana) -> 
     v = state.get("validacion") or {}
     cliente = state.get("cliente") or {}
     items_recalculados: list[dict[str, Any]] = []
+    faltantes_pendientes: list[str] = []
     
     for r in v.get("renglones", []):
-        nueva_cantidad = decision.ediciones.get(r["sku"], r["cantidad"])
+        cant_solicitada = decision.ediciones.get(r["sku"], r["cantidad"])
+        # Guardrail Art. 9: jamás facturar por encima del stock disponible en entrega inmediata.
+        # Si el operador no ingresó una cantidad manual explícita y la solicitada supera el stock,
+        # se factura lo disponible físicamente y la diferencia queda como entrega parcial pendiente.
+        if r["sku"] not in decision.ediciones and cant_solicitada > r["stock_disponible"]:
+            nueva_cantidad = r["stock_disponible"]
+            pendientes = cant_solicitada - nueva_cantidad
+            faltantes_pendientes.append(
+                f"Queda pendiente por falta de stock: {pendientes} x {r['sku']} {r['nombre']}"
+            )
+        else:
+            nueva_cantidad = cant_solicitada
+            if nueva_cantidad < r["cantidad"]:
+                pendientes = r["cantidad"] - nueva_cantidad
+                faltantes_pendientes.append(
+                    f"Ajuste de cantidad (pendiente/cancelado): {pendientes} x {r['sku']} {r['nombre']}"
+                )
+
         if nueva_cantidad > 0:
             items_recalculados.append({
                 "sku": r["sku"],
@@ -454,7 +472,7 @@ def _aplicar_edicion_humana(state: dict[str, Any], decision: DecisionHumana) -> 
         ruta="confirmar_pedido",
         motivo=f"Editado y autorizado por {decision.autorizado_por}: {decision.razon}".strip(": "),
         alertas=v.get("alertas", []),
-        observaciones=calc["observaciones"] + ["Pedido ajustado por Gerencia Comercial previo a la confirmación"],
+        observaciones=calc["observaciones"] + faltantes_pendientes + ["Pedido ajustado por Gerencia Comercial previo a la confirmación"],
         renglones=valor.get("renglones", []),
         bruto=valor.get("bruto", 0.0),
         descuento_volumen_pct=valor.get("descuento_volumen_pct", 0.0),
@@ -498,6 +516,13 @@ def aprobacion_humana(state: dict[str, Any]) -> dict[str, Any]:
     if decision.tipo == "editar":
         salida["validacion"] = _aplicar_edicion_humana(state, decision)
         detalle += f" | Nuevo neto recalculado: {pesos(salida['validacion']['neto'])}"
+    elif decision.tipo == "aprobar":
+        # Guardrail Art. 9: si aprueba tal cual pero había quiebre de stock,
+        # forzamos entrega parcial sobre el stock disponible para no facturar mercadería inexistente
+        hay_quiebre = any(r.get("cantidad", 0) > r.get("stock_disponible", 0) for r in (state.get("validacion") or {}).get("renglones", []))
+        if hay_quiebre:
+            salida["validacion"] = _aplicar_edicion_humana(state, decision)
+            detalle += f" | Entrega parcial por stock (Art. 9) - Nuevo neto: {pesos(salida['validacion']['neto'])}"
         
     salida["log"] = registrar("aprobacion_humana", detalle)
     return salida
@@ -536,10 +561,15 @@ def confirmar_pedido(state: dict[str, Any]) -> dict[str, Any]:
             linea += f" ({r['nota']})"
         items_lineas.append(linea)
     items_texto = "\n".join(items_lineas)
+    
+    pendientes_obs = [obs for obs in v.get("observaciones", []) if "pendiente por falta de stock" in obs]
+    pendientes_bloque = ("\nEntregas pendientes:\n" + "\n".join(f"- {p}" for p in pendientes_obs) + "\n") if pendientes_obs else ""
+    
     datos_redaccion = (
         f"Cliente: {c.get('razon_social', '')}\n"
         f"Número de pedido asignado: {resumen.numero}\n"
         f"Renglones confirmados:\n{items_texto}\n"
+        f"{pendientes_bloque}"
         f"Neto de mercadería: {pesos(v.get('neto', 0.0))}\n"
         f"Descuento comercial aplicado: {porcentaje(v.get('descuento_aplicado_pct', 0.0))}\n"
         f"Flete: {'Bonificado al 100%' if v.get('flete', 0) == 0 else pesos(v.get('flete', 0)) + ' + IVA'}\n"
@@ -673,8 +703,16 @@ def derivar_humano(state: dict[str, Any]) -> dict[str, Any]:
     ruta_guardada = datos.guardar_salida(f"tickets/{state.get('mensaje_id', 'ticket')}.json", ticket)
     
     # Saludo cordial y derivación sin gastar tokens de LLM
-    nombre_remitente = (state.get("remitente") or "").split(" ")[0]
-    saludo = f"Hola {nombre_remitente}" if nombre_remitente and "@" not in nombre_remitente else "Hola"
+    remitente_raw = state.get("remitente") or ""
+    palabra_remitente = remitente_raw.split(" ")[0]
+    es_remitente_tecnico = palabra_remitente.lower() in ("consola", "web", "cli", "sistema", "bot", "")
+    
+    if cliente.get("razon_social"):
+        saludo = f"Hola {cliente.get('razon_social')}"
+    elif palabra_remitente and "@" not in palabra_remitente and not es_remitente_tecnico:
+        saludo = f"Hola {palabra_remitente}"
+    else:
+        saludo = "Hola"
     respuesta = (
         f"{saludo}, gracias por comunicarte con {config.EMPRESA}. "
         f"Tu mensaje fue derivado al sector de {ticket.area} para una atención personalizada. "
