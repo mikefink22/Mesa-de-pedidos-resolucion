@@ -213,6 +213,16 @@ def caso_golden(caso_id: str) -> Optional[dict[str, Any]]:
     return None
 
 
+def guardar_salida(nombre: str, objeto: Any) -> Path:
+    """Escribe un JSON en artefactos/salidas/ y devuelve la ruta absoluta del archivo."""
+    ruta = config.SALIDAS / nombre
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    if hasattr(objeto, "model_dump"):
+        objeto = objeto.model_dump()
+    ruta.write_text(json.dumps(objeto, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    return ruta
+
+
 def cargar_catalogo() -> pd.DataFrame:
     """Compatibilidad: Retorna el catálogo como pandas DataFrame."""
     return pd.read_csv(config.CATALOGO_CSV, encoding="utf-8")

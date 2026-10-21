@@ -163,6 +163,15 @@ class DecisionHumana(BaseModel):
         default=None,
         description="Descuento especial autorizado en caso de edición."
     )
+    autorizado_por: Optional[str] = Field(
+        default="Gerencia Comercial",
+        description="Nombre o rol del operador o directivo que toma la decisión."
+    )
+
+    @property
+    def items_editados(self) -> dict[str, int]:
+        """Alias de conveniencia para acceder al mapa de ediciones."""
+        return self.ediciones
 
 
 # ===========================================================================
@@ -215,6 +224,11 @@ class ResultadoValidacion(BaseModel):
     cotizacion_flete: dict[str, Any] = Field(default_factory=dict)
     pago_anticipado: bool = False
 
+    @property
+    def total_con_iva(self) -> float:
+        """Alias para el importe final con impuestos."""
+        return self.total
+
 
 class ResumenPedido(BaseModel):
     """Documento formal emitido al finalizar el ciclo de un pedido (confirmado o rechazado)."""
@@ -230,6 +244,11 @@ class ResumenPedido(BaseModel):
     total: float = 0.0
     autorizado_por: Optional[str] = None
     motivo: str = ""
+
+    @property
+    def total_con_iva(self) -> float:
+        """Alias para el importe total con impuestos."""
+        return self.total
 
 
 class Ticket(BaseModel):
