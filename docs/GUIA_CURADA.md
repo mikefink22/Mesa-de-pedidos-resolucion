@@ -205,6 +205,52 @@ A partir de la exploración del código y de las pruebas del sistema de referenc
 
 ---
 
+## 🏛️ 7. Fase 4: Los 9 Nodos, Routers Condicionales y Orquestación del Grafo
+
+### Principios Fundamentales del Grafo en LangGraph
+
+1. **Responsabilidad Única y Atomicidad:**
+   Cada nodo es una función aislada que recibe `state: EstadoMesa` y devuelve únicamente las claves calculadas o modificadas. LangGraph se encarga de mezclar ese diccionario en el estado global.
+2. **Prohibición de Bifurcaciones Internas (Sin 'if' Ocultos):**
+   Los nodos no deciden a qué nodo saltar a continuación. Toda transición condicional se modela externamente en el grafo mediante una **arista condicional** compuesta por:
+   - Una **función router** (pasamanos puro que lee el estado y retorna una etiqueta textual).
+   - Un **mapa de rutas** (`{"etiqueta": "nombre_nodo_destino"}`).
+3. **Persistencia Transaccional (`SqliteSaver`):**
+   El soporte para `interrupt()` requiere persistencia en base de datos SQLite (`artefactos/checkpoints.sqlite`). Esto garantiza que cuando el proceso se frena para supervisión humana, el estado no se pierde al cerrar la consola y puede retomarse asíncronamente con `Command(resume=...)`.
+
+### Anatomía Técnica de los 9 Nodos
+
+| # | Nodo | Naturaleza | Lee del Estado | Escribe en el Estado | Rol en el Sistema |
+|---|---|---|---|---|---|
+| **1** | `cargar_cliente` | Python puro (sin LLM) | `cuit` | `cliente`, `errores`, `log` | Busca la ficha en `clientes.csv`. Si no existe, anota el error sin arrojar excepción. |
+| **2** | `clasificar` | LLM + Guardrails Python | `texto`, `cliente` | `clasificacion`, `intencion`, `log` | Determina intención (`consulta`/`pedido`/`derivar`) con Pydantic y aplica guardrails de confianza y CUIT registrado. |
+| **3** | `responder_consulta` | RAG + Citación | `texto`, `cliente`, `fecha` | `respuesta`, `citas`, `fragmentos`, `ruta`, `log` | Recupera políticas (híbrido BM25 + FAISS), precalcula flete/volumen en Python y cita fuentes fidedignas. |
+| **4** | `extraer_pedido` | LLM + Pydantic | `texto` | `pedido`, `log` | Extrae ítems, cantidades, pago anticipado y destino a partir de texto informal. Cero matemática. |
+| **5** | `validar_pedido` | Python puro (CERO LLM) | `cliente`, `pedido` | `validacion`, `log` | Cruza con `catalogo.csv`, calcula precios/topes, valida crédito/mora y cotiza fletes determinísticamente. |
+| **6** | `aprobacion_humana` | Human-in-the-Loop | `validacion`, `cliente`, `texto` | `decision_humana`, `validacion` (si edita), `log` | Frena con `interrupt(payload)` y al retomar procesa la decisión de Gerencia Comercial. |
+| **7** | `confirmar_pedido` | Python + Redacción LLM | `validacion`, `cliente`, `decision_humana` | `resumen`, `respuesta`, `ruta`, `log` | Emite `ResumenPedido` confirmado, persiste en disco y redacta mensaje formal de confirmación. |
+| **8** | `rechazar_pedido` | Python + Redacción LLM | `validacion`, `cliente`, `decision_humana` | `resumen`, `respuesta`, `ruta`, `log` | Emite `ResumenPedido` rechazado, persiste en disco y redacta mensaje diplomático con alternativa. |
+| **9** | `derivar_humano` | Python puro (sin LLM) | `clasificacion`, `validacion`, `cliente` | `ticket`, `respuesta`, `ruta`, `log` | Emite `Ticket` numerado asignado al sector correspondiente y genera respuesta de contacto. |
+
+### Los 3 Routers Oficiales (Pasamanos Puros)
+
+```python
+def ruta_por_intencion(state: EstadoMesa) -> str:
+    # Lee state["intencion"] -> 'consulta' | 'pedido' | 'derivar'
+    return state.get("intencion") or "derivar"
+
+def ruta_por_validacion(state: EstadoMesa) -> str:
+    # Lee state["validacion"]["ruta"] -> 'confirmar_pedido' | 'aprobacion_humana' | 'rechazar_pedido' | 'derivar_humano'
+    return (state.get("validacion") or {}).get("ruta") or "derivar_humano"
+
+def ruta_post_aprobacion(state: EstadoMesa) -> str:
+    # Lee state["decision_humana"]["tipo"] -> 'confirmar' | 'rechazar'
+    tipo = (state.get("decision_humana") or {}).get("tipo")
+    return "confirmar" if tipo in ("aprobar", "editar") else "rechazar"
+```
+
+---
+
 ## 📈 Bitácora de Progreso
 - [x] **Fase 0: Setup y Estructura:**
   - Estructura de carpetas `datos/`, `mesa_pedidos/`, `artefactos/` creada.
@@ -224,13 +270,17 @@ A partir de la exploración del código y de las pruebas del sistema de referenc
   - Módulo `mesa_pedidos/estado.py` con `EstadoMesa` (`TypedDict`) y reducer `Annotated[list[str], add]` para acumulación de trazas en `log` y `errores`.
   - Suite de pruebas organizada en `tests/` con soporte dual (automatizado vía `pytest` y ejecución visual directa vía `py tests/test_*.py`).
   - Verificación exitosa en `StateGraph` real de LangGraph (10/10 tests pasando).
-- [x] **Fase 2 - Paso C (Reglas Comerciales en `reglas.py`):**
+- [x] **Fase 3: Tools y Reglas Comerciales:**
   - Descuentos por volumen (Art. 4), topes por marca (15% en herramientas eléctricas Dewalt/Makita/Bosch, Art. 5) y financiero (3% pago anticipado, Art. 6).
   - Cotización de fletes por zonas 1 a 5, bonificaciones y recargo por carga peligrosa (aerosoles).
   - Motor determinístico `decidir_ruta` con cascada de prioridades sin `if` ocultos en el grafo.
   - Suite de pruebas `tests/test_reglas.py` con 6 tests unitarios sintéticos validados al 100%.
-- [ ] **Fase 3: Nodos y Routers Condicionales**
-- [ ] **Fase 4: Ensamblado del Grafo y SqliteSaver**
+- [x] **Fase 4: Los 9 Nodos, Routers Condicionales y Grafo Ensamblado:**
+  - Módulo `mesa_pedidos/llm.py` centralizando Google Gemini (`ChatGoogleGenerativeAI`) con Structured Output.
+  - Módulo `mesa_pedidos/prompts.py` con 5 plantillas blindadas contra Prompt Injection (`system` inmutable, mensaje del cliente en `human`) y cero matemática.
+  - Módulo `mesa_pedidos/nodos.py` con los 9 nodos de responsabilidad única y cero `if` de ruteo internos.
+  - Módulo `mesa_pedidos/grafo.py` conectando los 3 routers (`ruta_por_intencion`, `ruta_por_validacion`, `ruta_post_aprobacion`), aristas a `END`, `RetryPolicy` y persistencia con `SqliteSaver`.
+  - Suite `tests/test_grafo.py` validando compilación de `StateGraph`, presencia de los 9 nodos y exportación Mermaid.
 - [ ] **Fase 5: Human-in-the-Loop y Consola CLI**
 - [ ] **Fase 6: Evaluación contra Golden Set**
 
@@ -243,7 +293,8 @@ Durante el ciclo de desarrollo se implementaron utilidades de consola para verif
 | Utilidad / Script | Comando de Ejecución | Propósito Técnico |
 |---|---|---|
 | **Diagnóstico de Modelos** | `py -m mesa_pedidos.ver_modelos` | Consulta los modelos y límites de tasa (RPM / RPD) habilitados en Google AI Studio para la clave actual. |
-| **Suite Completa de Tests** | `py -m pytest tests/ -v` | Ejecuta las aserciones formales sobre el estado, reducers, herramientas y reglas comerciales. |
+| **Suite Completa de Tests** | `py -m pytest tests/ -v` | Ejecuta las aserciones formales sobre estado, tools, reglas y grafo. |
+| **Prueba de Grafo y Routers** | `py tests/test_grafo.py` | Valida la compilación limpia de StateGraph, los 3 routers pasamanos y exporta el Mermaid visual. |
 | **Prueba de Tools Comerciales** | `py tests/test_tools.py` | Ejecuta casos de prueba interactivos sobre `consultar_producto` y `verificar_credito` (exactitud, typos, ambigüedad y crédito). |
 | **Prueba de Estado LangGraph** | `py tests/test_estado.py` | Compila y ejecuta un flujo real de `StateGraph(EstadoMesa)` comprobando el reducer `add` y la serialización. |
 | **Prueba de Reglas de Negocio** | `py tests/test_reglas.py` | Valida y desglosa en pantalla la tabla de cálculo de precios, topes de marca, mora y fletes. |

@@ -21,6 +21,49 @@ El sistema automatiza el procesamiento de mensajes que ingresan por WhatsApp o c
 
 El flujo cuenta con 9 nodos, 3 routers condicionales y 5 hojas:
 
+### Diagrama Visual Interactivo (Mermaid)
+
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	cargar_cliente(cargar_cliente)
+	clasificar(clasificar)
+	responder_consulta(responder_consulta)
+	extraer_pedido(extraer_pedido)
+	validar_pedido(validar_pedido)
+	aprobacion_humana(aprobacion_humana)
+	confirmar_pedido(confirmar_pedido)
+	rechazar_pedido(rechazar_pedido)
+	derivar_humano(derivar_humano)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> cargar_cliente;
+	cargar_cliente --> clasificar;
+	extraer_pedido --> validar_pedido;
+	clasificar -. &nbsp;consulta&nbsp; .-> responder_consulta;
+	clasificar -. &nbsp;pedido&nbsp; .-> extraer_pedido;
+	clasificar -. &nbsp;derivar&nbsp; .-> derivar_humano;
+	validar_pedido -. &nbsp;confirmar_pedido&nbsp; .-> confirmar_pedido;
+	validar_pedido -. &nbsp;aprobacion_humana&nbsp; .-> aprobacion_humana;
+	validar_pedido -. &nbsp;rechazar_pedido&nbsp; .-> rechazar_pedido;
+	validar_pedido -. &nbsp;derivar_humano&nbsp; .-> derivar_humano;
+	aprobacion_humana -. &nbsp;confirmar&nbsp; .-> confirmar_pedido;
+	aprobacion_humana -. &nbsp;rechazar&nbsp; .-> rechazar_pedido;
+	responder_consulta --> __end__;
+	confirmar_pedido --> __end__;
+	rechazar_pedido --> __end__;
+	derivar_humano --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+```
+
+### Esquema Conceptual Detallado
+
 ```text
                         START
                           │
