@@ -130,10 +130,28 @@ def valorizar(
 
     renglones: list[RenglonValorizado] = []
     for i in items:
-        tope = tope_del_producto(i["rubro"], i["marca"])
-        pct = min(general, tope)
         cant = i.get("cantidad", i.get("cantidad_pedida", 1))
         subtotal_lista = cant * i["precio_lista"]
+
+        es_electrica = normalizar_texto(i.get("rubro", "")) == normalizar_texto(config.RUBRO_CON_TOPE_MARCA)
+        es_marca_tope = normalizar_texto(i.get("marca", "")) in config.MARCAS_CON_TOPE
+
+        if descuento_autorizado is not None:
+            # Excepción comercial autorizada por Gerencia:
+            # 1. Herramientas eléctricas de marcas protegidas respetan el tope contractual del 15% (Art. 5).
+            # 2. El resto de los productos adoptan el descuento excepcional autorizado por Gerencia.
+            if es_electrica and es_marca_tope:
+                tope = config.TOPE_DESCUENTO_MARCAS
+                pct = min(general, tope)
+                nota = f"tope {porcentaje(tope)} por marca (Art. 5)" if pct < general else ""
+            else:
+                pct = min(general, 100.0)
+                nota = ""
+        else:
+            tope = tope_del_producto(i["rubro"], i["marca"])
+            pct = min(general, tope)
+            nota = f"tope {porcentaje(tope)} por marca (Art. 5)" if pct < general else ""
+
         subtotal_neto = round(subtotal_lista * (1 - pct / 100), 2)
         
         renglones.append(
@@ -149,9 +167,9 @@ def valorizar(
                 subtotal_neto=subtotal_neto,
                 alicuota_iva=i["alicuota_iva"],
                 stock_disponible=i["stock"],
-                hay_stock=i["stock"] >= i["cantidad"],
+                hay_stock=i["stock"] >= cant,
                 deposito=i.get("deposito", ""),
-                nota=f"tope {porcentaje(tope)} por marca (Art. 5)" if pct < general else "",
+                nota=nota,
             )
         )
 

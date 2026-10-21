@@ -381,6 +381,55 @@ Este es el punto más delicado y crítico:
 
 ---
 
+### ⚖️ Caso de Estudio: El Conflicto de Descuentos (Soberanía de Gerencia vs. Topes Duros vs. Redacción del LLM)
+
+#### El Problema Detectado:
+- El Art. 5 fija un tope de descuento del **20%** para Mesa de Pedidos y un tope del **15%** en herramientas eléctricas Dewalt/Makita/Bosch por convenio con el fabricante.
+- Cuando un pedido requería aprobación humana porque el cliente solicitaba un descuento superior (ej. 25% en licitación) y la Gerencia Comercial autorizaba un descuento excepcional (ej. 25% o 58%), el código en `reglas.valorizar` ejecutaba:
+  ```python
+  tope = tope_del_producto(i["rubro"], i["marca"])  # Retornaba 20.0 (o 15.0)
+  pct = min(general, tope)                          # min(58.0, 20.0) -> ¡Clavado en 20%!
+  ```
+- **La Inconsistencia:** El sistema guardaba en el resumen `descuento_aplicado_pct: 58.0%`. El LLM leía ese número y redactaba al cliente: *"Te confirmamos el pedido con el 58% de descuento autorizado por Gerencia... Total: $22.664.510"*. Pero los importes matemáticos de cada renglón se habían calculado con el 20%. Se prometía un 58% pero se cobraba al 20%.
+
+#### La Solución Arquitectónica Implementada:
+1. **Soberanía de Gerencia Comercial (Art. 1 y Art. 5):**
+   - El tope del 20% es el límite de atribución delegada de Mesa de Pedidos.
+   - La Gerencia Comercial tiene la facultad expresa de autorizar excepciones comerciales por encima del 20%.
+   - Si Gerencia autoriza un descuento (`descuento_autorizado`), **los productos generales adoptan plenamente ese descuento** (ej. 25% o 30%).
+2. **Respeto a Convenios Contractuales de Fábrica:**
+   - Las herramientas eléctricas Dewalt, Makita y Bosch mantienen su tope del **15%** por restricción legal con los fabricantes (`min(general, 15.0)`), dejando nota explícita en el renglón.
+3. **Consistencia Numérica y Redacción sin Alucinaciones:**
+   - La suma de los subtotales netos coincide exactamente al centavo con el neto facturado.
+   - El nodo `confirmar_pedido` provee al LLM el desglose ítem por ítem con el descuento real aplicado a cada producto, garantizando que el texto de la carta y la factura final sean 100% coherentes.
+
+---
+
+### ⚠️ Notas Críticas para la Fase 6 (Puntos Ciegos del Golden Set)
+
+> [!IMPORTANT]
+> El archivo `golden_set.json` evalúa primordialmente **rutas categóricas** y **datos clave textuales**. Para la Fase 6 (evaluación formal con `evaluar.py`), debemos tener en cuenta las siguientes tres discrepancias documentadas:
+
+1. **Métricas de Ruteo vs. Facturación Real (Netos Monetarios):**
+   - La planilla original del docente aplicó descuentos comerciales globales planos, omitiendo:
+     1. El tope del 15% para herramientas eléctricas Dewalt/Makita/Bosch (Art. 5).
+     2. El 3% de descuento financiero por pago anticipado por transferencia fuera de tope (Art. 6).
+   - En 5 de los 9 pedidos del Golden Set (MSG-010, MSG-011, MSG-013, MSG-015, MSG-016), el ruteo da 100% perfecto, pero los netos difieren legítimamente de la planilla inicial del docente.
+   - *Qué hacer en Fase 6:* Mantener los cálculos rigurosos de Python y documentar el motivo técnico en el reporte de evaluación en vez de forzar una coincidencia con una planilla desactualizada.
+
+2. **Pedidos Escalados por Descuento Extraordinario (MSG-016):**
+   - El cliente pide 25% por licitación. El Golden Set espera la ruta `aprobacion_humana`.
+   - *Qué hacer en Fase 6:* Registrar que el sistema disparó el `interrupt()` **antes** de reanudar, verificando que el sistema reconoció la necesidad de escalamiento a Gerencia.
+
+3. **El Caso MSG-007 (Falso Positivo en Consultas y Datos Clave):**
+   - Pregunta: *"¿Cuántos aerosoles de WD-40 me pueden mandar a Santa Rosa?"*.
+   - El Golden Set pide `"24"` como dato clave de éxito.
+   - Las políticas (`logistica_fletes_2026.pdf`, Punto 5) establecen que el tope de 24 aplica **sólo a Zonas 4 y 5**. Santa Rosa (La Pampa) es **Zona 3** (no tiene tope de 24, sólo recargo del 15%).
+   - Si el LLM contesta *"máximo 24"*, el evaluador da verde por encontrar `"24"` pero la respuesta sustantiva es errónea.
+   - *Qué hacer en Fase 6:* Exponer este falso positivo en el informe como caso de estudio de la Ley de Goodhart.
+
+---
+
 ## 📈 Bitácora de Progreso
 - [x] **Fase 0: Setup y Estructura:**
   - Estructura de carpetas `datos/`, `mesa_pedidos/`, `artefactos/` creada.

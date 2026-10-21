@@ -529,7 +529,13 @@ def confirmar_pedido(state: dict[str, Any]) -> dict[str, Any]:
     )
     
     # Preparar datos ya calculados para el prompt (cero matemática en el LLM)
-    items_texto = "\n".join(f"- {r['cantidad']} x {r['nombre']} ({r['sku']})" for r in v.get("renglones", []))
+    items_lineas = []
+    for r in v.get("renglones", []):
+        linea = f"- {r['cantidad']} x {r['nombre']} ({r['sku']}) [Desc: {porcentaje(r['descuento_pct'])}]"
+        if r.get("nota"):
+            linea += f" ({r['nota']})"
+        items_lineas.append(linea)
+    items_texto = "\n".join(items_lineas)
     datos_redaccion = (
         f"Cliente: {c.get('razon_social', '')}\n"
         f"Número de pedido asignado: {resumen.numero}\n"

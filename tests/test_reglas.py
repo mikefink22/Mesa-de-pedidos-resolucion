@@ -104,6 +104,61 @@ def test_valorizacion_renglon_por_renglon_con_topes():
     assert "tope 15% por marca" in val2["renglones"][1].nota
 
 
+def test_descuento_autorizado_gerencia_soberania_y_tope_marca():
+    """Valida que si Gerencia Comercial autoriza una excepción mayor (ej. 30%):
+    - Los productos generales (Abrasivos) reciban el 30% autorizado, superando el 20%.
+    - Las herramientas eléctricas de marcas protegidas (Makita) mantengan el tope del 15% por contrato.
+    - La sumatoria de renglones coincida exactamente al centavo con el neto del pedido.
+    """
+    cliente = {"razon_social": "Cliente Licitación", "descuento_habitual": 10.0, "categoria": "A"}
+    items = [
+        {
+            "sku": "AB-1020",
+            "nombre": "Disco de corte Tyrolit",
+            "rubro": "Abrasivos",
+            "marca": "Tyrolit",
+            "cantidad": 100,
+            "precio_lista": 3250.0,
+            "alicuota_iva": 21.0,
+            "stock": 500,
+        },
+        {
+            "sku": "HE-4410",
+            "nombre": "Rotomartillo SDS Plus Makita",
+            "rubro": "Herramienta electrica",
+            "marca": "Makita",
+            "cantidad": 2,
+            "precio_lista": 250000.0,
+            "alicuota_iva": 21.0,
+            "stock": 10,
+        },
+    ]
+
+    val = reglas.valorizar(items, cliente, descuento_autorizado=30.0)
+
+    # 1. El descuento aplicado general refleja la autorización de Gerencia
+    assert val["descuento_aplicado_pct"] == 30.0
+
+    # 2. El renglón de Abrasivos recibe el 30% pleno (perfora el tope del 20%)
+    r_abrasivo = val["renglones"][0]
+    assert r_abrasivo.descuento_pct == 30.0
+    subtotal_esperado_abrasivo = round(100 * 3250.0 * 0.70, 2)  # 227.500,00
+    assert r_abrasivo.subtotal_neto == subtotal_esperado_abrasivo
+    assert r_abrasivo.nota == ""
+
+    # 3. El renglón de Makita mantiene el tope del 15% contractual
+    r_makita = val["renglones"][1]
+    assert r_makita.descuento_pct == 15.0
+    subtotal_esperado_makita = round(2 * 250000.0 * 0.85, 2)  # 425.000,00
+    assert r_makita.subtotal_neto == subtotal_esperado_makita
+    assert "tope 15% por marca" in r_makita.nota
+
+    # 4. Coherencia matemática estricta: la suma de subtotales da el neto total
+    neto_calculado = sum(r.subtotal_neto for r in val["renglones"])
+    assert val["neto"] == neto_calculado
+    assert val["neto"] == round(subtotal_esperado_abrasivo + subtotal_esperado_makita, 2)
+
+
 def test_evaluar_credito_mora_y_bloqueo():
     """Valida el análisis crediticio del Art. 7."""
     cliente_ok = {
