@@ -60,6 +60,8 @@ ESTRATEGIA_CHUNKING = "articulos"   # "articulos" o "recursivo"
 CHUNK_SIZE = 900
 CHUNK_OVERLAP = 150
 K_RECUPERACION = 4
+FETCH_K = 20                        # Candidatos preliminares para MMR
+LAMBDA_MMR = 0.5                    # Balance relevancia/diversidad en MMR
 RETRIEVER = "hibrido"               # "hibrido" (BM25 + denso) o "denso"
 PESOS_HIBRIDO = (0.4, 0.6)          # (BM25, denso)
 

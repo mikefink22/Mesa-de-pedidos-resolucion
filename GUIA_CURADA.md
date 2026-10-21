@@ -133,6 +133,16 @@ Para chequear los límites en tiempo real de tu cuenta:
 3. **LLM para Cuenta Gratuita:** Seleccionar en `config.py` un modelo con alto cupo diario como `gemini-3.1-flash-lite` (500 RPD y 15 RPM). Evitar usar modelos con tope de 20 RPD (como el 3.8 en free tier) porque no alcanzan a procesar los 20 casos de prueba del Golden Set.
 4. **Herramienta de diagnóstico:** Ejecutar `py -m mesa_pedidos.ver_modelos` para inspeccionar los modelos disponibles de cualquier API key.
 
+### Implementación del Módulo de Recuperación y Citas (`mesa_pedidos/recuperacion.py`)
+1. **Tokenizador BM25 con preservación de SKUs:**
+   `re.findall(r"[a-z]{2}-\d{4}|[a-z0-9]+", normalizar_texto(texto))` asegura que códigos como `HE-4330` o `¿HE-4330?` se capturen como el token limpio `he-4330`.
+2. **MMR (Maximal Marginal Relevance) en FAISS:**
+   `fetch_k=20`, `k=4`, `lambda_mult=0.5`. Evita que el retriever traiga cuatro fragmentos redundantes que dicen lo mismo, diversificando la información para el LLM.
+3. **EnsembleRetriever:**
+   Combina BM25 (0.4) y FAISS denso (0.6) aplicando Reciprocal Rank Fusion (RRF).
+4. **Citación Verificable:**
+   El modelo devuelve el esquema Pydantic `RespuestaConsulta(respuesta=..., fuentes=[1, 2], encontrado=True)`. La función `citas_desde_fuentes()` toma esos enteros y busca los metadatos reales del documento (`documento`, `pagina`), garantizando cero alucinaciones de archivos o páginas inexistentes.
+
 ---
 
 ## 🏛️ 4. Matriz de Decisiones de Arquitectura (Consenso de Diseño)
