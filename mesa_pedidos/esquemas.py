@@ -198,16 +198,48 @@ RutaComercial = Literal[
 class ResultadoValidacion(BaseModel):
     """Resultado determinístico de validar un pedido comercial en Python puro."""
     ruta: RutaComercial
-    motivo: str
+    motivo: str = ""
     alertas: list[str] = Field(default_factory=list)
+    observaciones: list[str] = Field(default_factory=list)
     renglones: list[RenglonValorizado] = Field(default_factory=list)
+    no_resueltos: list[dict] = Field(default_factory=list)
     bruto: float = 0.0
     descuento_volumen_pct: float = 0.0
     descuento_aplicado_pct: float = 0.0
     descuento_financiero: float = 0.0
     neto: float = 0.0
     iva: float = 0.0
+    flete: float = 0.0
     total: float = 0.0
-    flete: dict[str, Any] = Field(default_factory=dict)
     credito: dict[str, Any] = Field(default_factory=dict)
+    cotizacion_flete: dict[str, Any] = Field(default_factory=dict)
+    pago_anticipado: bool = False
+
+
+class ResumenPedido(BaseModel):
+    """Documento formal emitido al finalizar el ciclo de un pedido (confirmado o rechazado)."""
+    numero: str
+    mensaje_id: str
+    cuit: str
+    razon_social: str
+    estado: Literal["confirmado", "rechazado"]
+    renglones: list[RenglonValorizado] = Field(default_factory=list)
+    neto: float = 0.0
+    descuento_aplicado_pct: float = 0.0
+    flete: float = 0.0
+    total: float = 0.0
+    autorizado_por: Optional[str] = None
+    motivo: str = ""
+
+
+class Ticket(BaseModel):
+    """Incidente derivado para atención humana (reclamos, casos fuera de catálogo, etc.)."""
+    numero: str
+    mensaje_id: str
+    area: str
+    motivo: str
+    origen: Literal["clasificacion", "validacion"]
+    resumen: str
+    cliente: Optional[str] = None
+
 

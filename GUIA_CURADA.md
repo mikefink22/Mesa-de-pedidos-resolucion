@@ -216,14 +216,18 @@ A partir de la exploración del código y de las pruebas del sistema de referenc
   - Retriever híbrido (BM25 + FAISS denso con MMR) en `mesa_pedidos/recuperacion.py`.
   - Citación verificable probada contra el hito de flete a Neuquén ($175.000 citando pág. 1).
 - [x] **Fase 2 - Paso A (Tools Comerciales implementadas):**
-  - Módulo `mesa_pedidos/esquemas.py` con modelos Pydantic (`Cliente`, `Producto`, `RenglonValorizado`).
+  - Módulo `mesa_pedidos/esquemas.py` con modelos Pydantic (`Cliente`, `Producto`, `RenglonValorizado`, `ResumenPedido`, `Ticket`).
   - Módulo `mesa_pedidos/utilidades.py` (`pesos`, `porcentaje`, `cuit_valido`, `registrar`).
   - Módulo `mesa_pedidos/tools.py` con `@tool` y `args_schema` para `consultar_producto` y `verificar_credito`.
   - Tolerancia tipográfica con `difflib` (cutoff $\ge 75\%$) y detección de ambigüedad probada.
-- [ ] **Fase 2 - Paso B (Reglas Comerciales en `reglas.py`):**
+- [x] **Fase 2 - Paso B (Estado del Grafo y Suite de Tests):**
+  - Módulo `mesa_pedidos/estado.py` con `EstadoMesa` (`TypedDict`) y reducer `Annotated[list[str], add]` para acumulación de trazas en `log` y `errores`.
+  - Suite de pruebas organizada en `tests/` con soporte dual (automatizado vía `pytest` y ejecución visual directa vía `py tests/test_*.py`).
+  - Verificación exitosa en `StateGraph` real de LangGraph (10/10 tests pasando).
+- [ ] **Fase 2 - Paso C (Reglas Comerciales en `reglas.py`):**
   - Descuentos por volumen, topes de marca (15%), flete y ruteo de pedidos.
-- [ ] **Fase 3: Estado, Esquemas Pydantic y Nodos**
-- [ ] **Fase 4: Grafo y Routers Condicionales**
+- [ ] **Fase 3: Nodos y Routers Condicionales**
+- [ ] **Fase 4: Ensamblado del Grafo y SqliteSaver**
 - [ ] **Fase 5: Human-in-the-Loop y Consola CLI**
 - [ ] **Fase 6: Evaluación contra Golden Set**
 
@@ -236,6 +240,8 @@ Durante el ciclo de desarrollo se implementaron utilidades de consola para verif
 | Utilidad / Script | Comando de Ejecución | Propósito Técnico |
 |---|---|---|
 | **Diagnóstico de Modelos** | `py -m mesa_pedidos.ver_modelos` | Consulta los modelos y límites de tasa (RPM / RPD) habilitados en Google AI Studio para la clave actual. |
-| **Prueba de Tools Comerciales** | `py probar_tools.py` | Ejecuta casos de prueba unitarios sobre `consultar_producto` y `verificar_credito` (exactitud, typos, ambigüedad y crédito). |
+| **Suite Completa de Tests** | `py -m pytest tests/ -v` | Ejecuta las aserciones formales sobre el estado, reducers y herramientas comerciales. |
+| **Prueba de Tools Comerciales** | `py tests/test_tools.py` | Ejecuta casos de prueba interactivos sobre `consultar_producto` y `verificar_credito` (exactitud, typos, ambigüedad y crédito). |
+| **Prueba de Estado LangGraph** | `py tests/test_estado.py` | Compila y ejecuta un flujo real de `StateGraph(EstadoMesa)` comprobando el reducer `add` y la serialización. |
 | **Inspección RAG Aislada** | `py -m mesa_pedidos.recuperacion "texto"` | Evalúa el pipeline de recuperación híbrida (BM25 + FAISS) y generación de citas verificables. |
 
