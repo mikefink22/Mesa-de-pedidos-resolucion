@@ -119,24 +119,22 @@ Mesa de Pedidos/
 │   ├── test_reglas.py        descuentos, mora, fletes y ruteo
 │   ├── test_estado.py        EstadoMesa, reducers y compilación
 │   ├── test_grafo.py         topología de 9 nodos y 3 routers
-│   └── test_ejecucion.py     frenado, SQLite y reanudación
+│   ├── test_ejecucion.py     frenado, SQLite y reanudación
+│   └── test_caso_luciana_descuento.py laboratorio experimental de reglas y stock
 │
 └── docs/                     documentación y entrega
     ├── CONSIGNA.md           enunciado original
-    ├── GUIA_CURADA.md        manual de estudio y bitácora técnica
+    ├── CUADERNO_DE_INGENIERIA.md manual de estudio y bitácora técnica
+    ├── CASO_ESTUDIO_MSG016_HITL.md caso de estudio de negociación comercial
     ├── INFORME_FINAL.*       informe de entrega académica (md, pdf, docx)
     └── grafo.md              diagrama y topología del grafo
 ```
 
 ---
 
-## ⚙️ 4. Puesta en Marcha
+## ⚙️ 4. Puesta en Marcha Rápida (5 pasos copiables)
 
-### Prerrequisitos
-- Python 3.10+ en Windows.
-- Clave de API de Google Gemini (o de OpenAI opcional).
-
-### Instalación paso a paso
+Para levantar el sistema de cero en una máquina Windows limpia con Python 3.10+:
 
 1. **Crear y activar el entorno virtual:**
    ```powershell
@@ -150,15 +148,22 @@ Mesa de Pedidos/
    ```
 
 3. **Configurar variables de entorno:**
-   Copia la plantilla `.envmodelo` a un nuevo archivo `.env` y coloca tu API Key:
    ```powershell
    copy .envmodelo .env
+   # Editar .env y definir: GOOGLE_API_KEY=tu_clave_real_aqui
    ```
-   Dentro de `.env`:
-   ```env
-   GOOGLE_API_KEY=tu_clave_real_aqui
+
+4. **Indexar las políticas (RAG persistido en FAISS):**
+   ```powershell
+   .\.venv\Scripts\python.exe -m mesa_pedidos.indexar
    ```
-   *(Nota de seguridad: el archivo `.env` está estrictamente ignorado en `.gitignore` para no filtrar credenciales).*
+
+5. **Ejecutar la evaluación formal contra el Golden Set (o un caso en consola):**
+   ```powershell
+   .\.venv\Scripts\python.exe evaluar.py
+   # O probar un pedido con freno HITL interactivo:
+   .\.venv\Scripts\python.exe correr.py --mensaje MSG-013
+   ```
 
 ---
 
@@ -255,7 +260,34 @@ El reporte estructurado se persiste automáticamente en:
 
 ---
 
-## 📚 7. Documentación Complementaria y Casos de Estudio
+## ⚖️ 7. Decisiones de Diseño, Análisis Crítico y Evolución
+
+### 1. ¿Por qué chunking semántico por artículo y no un `chunk_size` fijo?
+El fraccionamiento recursivo tradicional por longitud de caracteres (ej. 500 o 1.000 tokens) fractura cláusulas normativas a la mitad, separando condiciones de sus excepciones o dividiendo especificaciones técnicas. Se diseñó un particionador estructural por expresiones regulares (`indexar.py`) que genera **59 chunks atómicos**, preservando íntegro cada artículo normativo y cada ficha de producto junto con sus metadatos (archivo, sección y página). Esto resolvió de raíz la ceguera vectorial en códigos de parte técnicos (como el atornillador `HE-4330` en `MSG-004`).
+
+### 2. ¿Por qué esas reglas disparan aprobación humana?
+El nodo `validar_pedido` canaliza a `aprobacion_humana` con `interrupt()` únicamente cuando se configuran situaciones de riesgo financiero o comercial tipificadas en las políticas:
+- **Mora comercial entre 30 y 60 días (Art. 7):** Requiere evaluación de riesgo crediticio antes de comprometer inventario.
+- **Exceso de límite de crédito:** Cuando el saldo deudor actual más el neto proyectado con IVA excede el cupo asignado al cliente.
+- **Descuentos especiales fuera de escala (Art. 4 y 5):** Solicitudes que superan la escala de volumen general (hasta 12%) o el tope del 15% en herramientas eléctricas protegidas (Dewalt, Makita, Bosch).
+
+### 3. Casos Borde y Aprendizajes del Benchmark
+- **`MSG-007` (La paradoja del dato clave en cargas peligrosas):** El benchmark da el caso por aprobado buscando `"24"` en la respuesta (cupo de aerosoles WD-40 para Santa Rosa, La Pampa). Sin embargo, una lectura minuciosa de `logistica_fletes_2026.pdf` revela que el tope de 24 rige únicamente para Zonas 4 y 5 (Patagonia y NEA); Santa Rosa es Zona 3, donde no rige dicho cupo sino únicamente el recargo del 15% por carga peligrosa. Este hallazgo demuestra la importancia de la auditoría cualitativa por sobre las métricas sintéticas.
+- **`MSG-001` (Alucinación de escala vs. cálculo determinístico):** El LLM recuperaba el Art. 4 pero ubicaba \$1.200.000 en el escalón de \$250k-\$999k (0% en vez de 5%). Se trasladó el cálculo aritmético a Python (`reglas.calculos_para_consulta`), dejando al LLM exclusivamente la redacción explicativa.
+
+### 4. ¿Qué demandó mayor tiempo de desarrollo?
+Lo que mayor tiempo de investigación y desarrollo consumió fue la **orquestación del ciclo Human-in-the-Loop duradero con `SqliteSaver`**:
+1. Garantizar la serialización transaccional limpia del estado en disco (`artefactos/checkpoints.sqlite`) sin incurrir en bloqueos de conexión (*deadlocks*) al inspeccionar hilos pendientes.
+2. Resolver la **"trampa del interrupt"** durante la suite de evaluación batch (`evaluar.py`): si se reanuda de inmediato el flujo con aprobación, el estado final transmuta a `confirmar_pedido`. Fue necesario auditar el checkpoint en SQLite *antes* de emitir el `Command(resume=...)` para certificar con fidelidad que el sistema supo frenar de forma autónoma.
+
+### 5. Evolución Arquitectónica hacia Producción (Mesa de Pedidos 2.0)
+En el flujo actual, cuando Gerencia interviene en `aprobacion_humana` con la opción `editar` (modificando cantidades por quiebre de stock o ajustando precios por topes comerciales), el grafo deriva directamente a `confirmar_pedido`. En un entorno B2B productivo, una modificación sustancial de la orden de compra no debe facturarse sin conformidad previa del comprador. 
+
+La evolución natural hacia una versión 2.0 consiste en desacoplar esta transición incorporando un nodo intermedio `emitir_contraoferta` o `presupuesto`, reteniendo la confirmación mediante un segundo `interrupt()` a la espera del "OK" final del cliente.
+
+---
+
+## 📚 8. Documentación Complementaria y Casos de Estudio
 
 * 🔬 **[Caso de Estudio Técnico: Negociación HITL, Guardrail de Stock (Art. 9) y Ciclo de Reclamos (MSG-016)](docs/CASO_ESTUDIO_MSG016_HITL.md)**:  
   Análisis técnico profundo sobre el caso MSG-016: negociación de excepciones comerciales, implementación del guardrail en Python para entrega parcial y prevención de facturación de mercadería sin stock, y derivación automática de reclamos con tickets auditables.
