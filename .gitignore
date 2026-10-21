@@ -34,3 +34,7 @@ artefactos/salidas/*
 Thumbs.db
 .vscode/
 .idea/
+
+# Docs
+AGENTS.md
+PLAN_DE_TRABAJO.md
